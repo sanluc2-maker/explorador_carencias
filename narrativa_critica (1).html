@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resultados — Mapa crítico</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --teal: #007B7F; --teal-light: #E8F5F5;
+    --dark: #1a1a1a; --green: #3B6D11; --red: #A32D2D;
+    --green-bright: #4CAF50; --red-bright: #E24B4A;
+    --yellow: #F59E0B; --border: #e5e5e5;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Georgia', serif; background: #fff; color: #1a1a1a; overflow-x: hidden; }
+  #progress { position:fixed;top:0;left:0;height:3px;width:0%;background:var(--teal);z-index:999;transition:width 0.1s linear; }
+  .scene { max-width:760px;margin:0 auto;padding:5rem 2rem;opacity:0;transform:translateY(30px);transition:opacity 0.8s ease,transform 0.8s ease; }
+  .scene.visible { opacity:1;transform:translateY(0); }
+  .section-wrap { border-bottom:1px solid var(--border); }
+  .apertura { font-size:clamp(26px,4.5vw,44px);font-weight:normal;line-height:1.35;color:#1a1a1a;border-left:4px solid var(--teal);padding-left:1.5rem;margin-bottom:2rem; }
+  h2 { font-family:Arial,sans-serif;font-size:clamp(20px,3vw,26px);font-weight:700;color:#1a1a1a;margin-bottom:1.25rem;line-height:1.3; }
+  p { font-size:clamp(15px,2vw,17px);line-height:1.85;color:#444;margin-bottom:1.25rem; }
+  .highlight { color:#1a1a1a;font-weight:bold; }
+  .green-txt { color:var(--green);font-weight:bold; }
+  .red-txt { color:var(--red);font-weight:bold; }
+  .divider { width:48px;height:3px;background:var(--teal);margin:2rem 0;border-radius:2px; }
+  .img-overlay-wrap { position:relative;width:100%;border-radius:16px;overflow:hidden;margin:2rem 0;background:#111; }
+  .img-overlay-wrap img { width:100%;height:420px;object-fit:cover;display:block;opacity:0.95;transition:opacity 0.6s ease; }
+  .img-overlay-wrap:hover img { opacity:0.75; }
+  .img-overlay-text { position:absolute;bottom:0;left:0;right:0;padding:2rem;background:linear-gradient(transparent,rgba(0,0,0,0.85));transform:translateY(20px);opacity:0;transition:all 0.7s ease; }
+  .img-overlay-wrap.revealed .img-overlay-text { transform:translateY(0);opacity:1; }
+  .quote-ov { font-size:clamp(15px,2vw,19px);font-style:italic;color:#fff;line-height:1.6;margin-bottom:0.5rem; }
+  .author-ov { font-family:Arial,sans-serif;font-size:12px;color:#B2DFDF;letter-spacing:0.5px; }
+  .img-ai-note { font-family:Arial,sans-serif;font-size:11px;color:#aaa;margin-top:0.5rem;font-style:italic; }
+  .stats-grid { display:flex;gap:1rem;flex-wrap:wrap;margin:2rem 0; }
+  .stat-card { flex:1;min-width:140px;background:#f9f9f9;border-radius:12px;padding:1.5rem 1.25rem;text-align:center;border:1px solid var(--border);transition:transform 0.3s,box-shadow 0.3s; }
+  .stat-card:hover { transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,0.08); }
+  .stat-arrow { font-size:28px;margin-bottom:0.5rem; }
+  .stat-value { font-family:Arial,sans-serif;font-size:28px;font-weight:700;margin-bottom:0.25rem; }
+  .stat-label { font-family:Arial,sans-serif;font-size:12px;color:#888;letter-spacing:0.5px; }
+  .stat-sig { font-family:Arial,sans-serif;font-size:10px;color:#aaa;margin-top:0.25rem; }
+  .prog-bar-wrap { margin:1.5rem 0; }
+  .prog-bar-row { margin-bottom:1rem; }
+  .prog-bar-label { font-family:Arial,sans-serif;font-size:13px;color:#555;display:flex;justify-content:space-between;margin-bottom:6px; }
+  .prog-bar-track { height:12px;background:#f0f0f0;border-radius:99px;overflow:hidden; }
+  .prog-bar-fill { height:100%;border-radius:99px;width:0%;transition:width 1.4s cubic-bezier(0.4,0,0.2,1); }
+  .timeline-wrap { background:#f9f9f9;border-radius:16px;padding:1.5rem;margin:2rem 0;border:1px solid var(--border); }
+  .timeline-title { font-family:Arial,sans-serif;font-size:12px;color:#aaa;margin-bottom:1rem;letter-spacing:0.5px; }
+  #sentimientoSVG { width:100%;height:180px; }
+  .quote-block { background:#f9f9f9;border-left:4px solid var(--teal);padding:1.5rem 1.75rem;border-radius:0 12px 12px 0;margin:1.5rem 0; }
+  .quote-text { font-size:clamp(16px,2vw,19px);font-style:italic;color:#1a1a1a;line-height:1.65;margin-bottom:0.75rem; }
+  .quote-author { font-family:Arial,sans-serif;font-size:12px;color:var(--teal);letter-spacing:0.5px; }
+
+  /* VOICES - más visual */
+  .voices-grid { display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1.5rem 0; }
+  @media(max-width:600px){ .voices-grid{grid-template-columns:1fr;} }
+  .voice-card { background:#fff;border-radius:14px;padding:1.25rem;border:1px solid var(--border);position:relative;transition:transform 0.3s,box-shadow 0.3s; }
+  .voice-card:hover { transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,0.07); }
+  .voice-card.positiva { border-top:3px solid var(--green-bright); }
+  .voice-card.negativa { border-top:3px solid var(--red-bright); }
+  .voice-card.incertidumbre { border-top:3px solid var(--yellow); }
+  .voice-badge { font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:0.75rem;display:flex;align-items:center;gap:6px; }
+  .voice-badge .dot { width:8px;height:8px;border-radius:50%;display:inline-block; }
+  .voice-text { font-size:13px;line-height:1.65;color:#444;font-style:italic;margin-bottom:0.5rem; }
+  .voice-meta { font-family:Arial,sans-serif;font-size:11px;color:#aaa; }
+
+  /* BALANCE VISUAL */
+  .balance-wrap { display:flex;gap:1rem;margin:2rem 0;align-items:stretch; }
+  .balance-col { flex:1;border-radius:14px;padding:1.5rem;border:1px solid; }
+  .balance-col.pos { background:#f0faf0;border-color:#c8e6c9; }
+  .balance-col.neg { background:#fff5f5;border-color:#ffcdd2; }
+  .balance-header { font-family:Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;margin-bottom:1rem; }
+  .balance-item { font-size:13px;line-height:1.6;color:#444;font-style:italic;margin-bottom:0.75rem;padding-bottom:0.75rem;border-bottom:1px solid rgba(0,0,0,0.06); }
+  .balance-item:last-child { border-bottom:none;margin-bottom:0;padding-bottom:0; }
+
+  /* CERO VISUAL */
+  .cero-wrap { margin:2rem 0; }
+  .cero-row { display:flex;align-items:center;gap:1rem;margin-bottom:1rem; }
+  .cero-label { font-family:Arial,sans-serif;font-size:13px;color:#555;width:110px;flex-shrink:0; }
+  .cero-track { flex:1;height:28px;background:#f0f0f0;border-radius:8px;overflow:hidden;position:relative; }
+  .cero-fill { height:100%;border-radius:8px;width:0%;transition:width 1.4s cubic-bezier(0.4,0,0.2,1);display:flex;align-items:center;justify-content:flex-end;padding-right:10px; }
+  .cero-val { font-family:Arial,sans-serif;font-size:12px;font-weight:700;color:#fff;white-space:nowrap; }
+  .cero-note { font-family:Arial,sans-serif;font-size:13px;color:#888;background:#fffbf0;border:1px solid #ffe082;border-radius:10px;padding:1rem 1.25rem;margin-top:1rem;line-height:1.6; }
+
+  /* ANSWER VISUAL */
+  .answer-visual { display:flex;flex-direction:column;gap:0.875rem;margin:2rem 0; }
+  .answer-row { display:flex;align-items:center;gap:1rem;background:#f9f9f9;border-radius:12px;padding:1.25rem;border:1px solid var(--border);transition:transform 0.3s; }
+  .answer-row:hover { transform:translateX(4px); }
+  .answer-icon { font-size:28px;flex-shrink:0; }
+  .answer-content { flex:1; }
+  .answer-dim { font-family:Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:0.25rem; }
+  .answer-verdict { font-family:Arial,sans-serif;font-size:16px;font-weight:700; }
+  .answer-desc { font-size:13px;color:#666;margin-top:0.25rem;line-height:1.5; }
+
+  .answer-block { border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1rem;border:1px solid; }
+  .answer-green { background:#f0faf0;border-color:#c8e6c9; }
+  .answer-red { background:#fff5f5;border-color:#ffcdd2; }
+  .answer-yellow { background:#fffbf0;border-color:#ffe082; }
+  .answer-label { font-family:Arial,sans-serif;font-size:11px;letter-spacing:1px;margin-bottom:0.5rem;font-weight:600; }
+  .answer-block p { margin:0;font-size:15px;color:#333; }
+
+  /* STAT NÚMERO GRANDE */
+  .big-stat { text-align:center;padding:2.5rem 1rem;background:#f9f9f9;border-radius:16px;border:1px solid var(--border);margin:2rem 0; }
+  .big-stat .number { font-family:Arial,sans-serif;font-size:clamp(48px,8vw,80px);font-weight:900;line-height:1; }
+  .big-stat .sub { font-family:Arial,sans-serif;font-size:14px;color:#888;margin-top:0.5rem; }
+
+  .cierre { font-size:clamp(20px,3vw,30px);font-weight:normal;line-height:1.55;color:#1a1a1a;border-left:4px solid var(--teal);padding-left:1.5rem;margin:2.5rem 0;font-style:italic; }
+  .footer-note { background:#f9f9f9;padding:3rem 2rem;text-align:center;border-top:1px solid var(--border); }
+  .footer-note p { font-family:Arial,sans-serif;font-size:12px;color:#aaa;max-width:640px;margin:0 auto 0.5rem;line-height:1.6; }
+  .scroll-hint { font-family:Arial,sans-serif;font-size:13px;color:var(--teal);margin-top:3rem;display:flex;align-items:center;gap:8px; }
+  .scroll-hint::after { content:'';display:inline-block;width:1px;height:40px;background:var(--teal);animation:pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
+  @media(max-width:600px){ .stats-grid{flex-direction:column;} .scene{padding:3.5rem 1.25rem;} .img-overlay-wrap img{height:260px;} .balance-wrap{flex-direction:column;} .cero-label{width:80px;font-size:11px;} }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+
+<!-- PORTADA -->
+<div class="section-wrap" style="background:#f9f9f9;">
+<div class="scene" id="s0" style="padding-top:6rem;padding-bottom:6rem;">
+  <div style="font-family:Arial,sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--teal);margin-bottom:1.5rem;">Resultados</div>
+  <div class="apertura">"En 2022, el gobierno llegó con más dinero, y los efectos en las personas mayores no pasaron desapercibidos."</div>
+  <p style="font-family:Arial,sans-serif;font-size:14px;color:#aaa;line-height:1.7;">Una lectura sobre la Pensión para el Bienestar construida con microdatos del ENIGH 2016–2024, análisis de sentimiento en YouTube y testimonios directos de personas mayores de 65 años.</p>
+  <div class="scroll-hint">Desplázate para leer</div>
+</div>
+</div>
+
+<!-- IMAGEN PORTADA -->
+<div class="section-wrap">
+<div class="scene" id="s0b">
+  <div class="img-overlay-wrap" id="img0">
+    <img src="https://sanluc2-maker.github.io/explorador_carencias/variaspersonas.jpg" alt="Adultos mayores mexicanos"/>
+    <div class="img-overlay-text">
+      <div class="quote-ov">"Más de 10 millones de personas. Para la mayoría, la pensión es el único ingreso fijo que reciben cada dos meses."</div>
+    </div>
+  </div>
+  <p class="img-ai-note">* Imágenes generadas con inteligencia artificial con fines ilustrativos.</p>
+</div>
+</div>
+
+<!-- EL PICO -->
+<div class="section-wrap">
+<div class="scene" id="s1">
+  <h2>2022: el pico que no volvería a repetirse</h2>
+  <p>El análisis cubre comentarios de YouTube de toda la población — no solo adultos mayores — sobre la Pensión para el Bienestar entre 2019 y 2026. Es un termómetro de la conversación pública sobre el programa.</p>
+  <p>En 2022, <span class="highlight">el 78% de los comentarios eran positivos</span> — el máximo de toda la serie. La gente escribía: <em>"gracias presidente"</em>, <em>"qué bendición"</em>, <em>"por fin alguien nos ve"</em>. Ese año fue el pico de aprobación pública. <span class="highlight">No volvería a repetirse.</span></p>
+  <div class="timeline-wrap">
+    <div class="timeline-title">SENTIMIENTO POSITIVO EN REDES SOCIALES · % POR AÑO · TODA LA POBLACIÓN (2019–2026)</div>
+    <svg id="sentimientoSVG" viewBox="0 0 700 180" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#007B7F" stop-opacity="0.2"/>
+          <stop offset="100%" stop-color="#007B7F" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <line x1="60" y1="20" x2="680" y2="20" stroke="#eee" stroke-width="1"/>
+      <line x1="60" y1="60" x2="680" y2="60" stroke="#eee" stroke-width="1"/>
+      <line x1="60" y1="100" x2="680" y2="100" stroke="#eee" stroke-width="1"/>
+      <line x1="60" y1="140" x2="680" y2="140" stroke="#eee" stroke-width="1"/>
+      <text x="52" y="23" font-family="Arial" font-size="9" fill="#bbb" text-anchor="end">80%</text>
+      <text x="52" y="63" font-family="Arial" font-size="9" fill="#bbb" text-anchor="end">60%</text>
+      <text x="52" y="103" font-family="Arial" font-size="9" fill="#bbb" text-anchor="end">40%</text>
+      <text x="52" y="143" font-family="Arial" font-size="9" fill="#bbb" text-anchor="end">20%</text>
+      <path id="areaPath" d="" fill="url(#areaGrad)" opacity="0"/>
+      <path id="linePath" d="" fill="none" stroke="#007B7F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <g id="svgDots"></g>
+      <g id="svgLabels"></g>
+      <line id="marker2022" x1="0" y1="15" x2="0" y2="155" stroke="#F59E0B" stroke-width="1.5" stroke-dasharray="4,3" opacity="0"/>
+      <text id="markerLabel" x="0" y="11" font-family="Arial" font-size="9" fill="#F59E0B" text-anchor="middle" opacity="0">Pico 2022</text>
+    </svg>
+  </div>
+  <div class="quote-block">
+    <div class="quote-text">"Señor Presidente mis papás le están muy agradecidos. Somos de Aguascalientes y les encargo la gente que vive en los ranchitos más olvidados."</div>
+    <div class="quote-author">— Comentario positivo · Aguascalientes · 2024</div>
+  </div>
+  <p style="font-family:Arial,sans-serif;font-size:12px;color:#aaa;">Fuente: Análisis de sentimiento sobre comentarios de YouTube, 2019–2026. Toda la población.</p>
+</div>
+</div>
+
+<!-- LAS PERSONAS -->
+<div class="section-wrap" style="background:#fafafa;">
+<div class="scene" id="s2">
+  <h2>Las personas detrás del número</h2>
+  <p>Los datos dicen que la alimentación mejoró. Los testimonios dicen lo mismo, en palabras propias.</p>
+  <div class="img-overlay-wrap" id="img2">
+    <img src="https://sanluc2-maker.github.io/explorador_carencias/mujer1.jpg" alt="Mujer adulta mayor en cocina"/>
+    <div class="img-overlay-text">
+      <div class="quote-ov">"Con la pensión ya puedo comprar leche y fruta sin tener que escoger entre eso o el gas. Eso para mí es mucho."</div>
+      <div class="author-ov">— Roberto S. · 68 años · Veracruz · Testimonio presencial</div>
+    </div>
+  </div>
+  <div class="quote-block" style="border-left-color:var(--green-bright);">
+    <div class="quote-text">"Desde que recibo la pensión ya no tengo que trabajar para poder comer. A mis 80 años eso vale mucho."</div>
+    <div class="quote-author">— Juan R. · 80 años · Nuevo León · Testimonio presencial, Hub Tec Monterrey</div>
+  </div>
+</div>
+</div>
+
+<!-- LOS DATOS CONFIRMAN -->
+<div class="section-wrap">
+<div class="scene" id="s3">
+  <h2>No es solo una impresión. Los números lo confirman.</h2>
+  <p>A partir de los microdatos del ENIGH para cinco años (2016–2024) se comparó qué tanto cambió la situación de las personas de <span class="highlight">65 años o más</span> respecto a personas de <span class="highlight">60 a 64 años</span> — un grupo muy similar — antes y después de 2022.</p>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-arrow" style="color:var(--green-bright);">↓</div>
+      <div class="stat-value green-txt"><span class="counter" data-target="2.9" data-prefix="−" data-suffix=" pp">−0 pp</span></div>
+      <div class="stat-label">Carencia alimentaria</div>
+      <div class="stat-sig">Resultado muy sólido estadísticamente</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-arrow" style="color:var(--green-bright);">↓</div>
+      <div class="stat-value green-txt"><span class="counter" data-target="0.5" data-prefix="−" data-suffix=" pp">−0 pp</span></div>
+      <div class="stat-label">Carencia de vivienda</div>
+      <div class="stat-sig">Resultado estadísticamente significativo</div>
+    </div>
+  </div>
+  <div class="prog-bar-wrap" id="bars3">
+    <div class="prog-bar-row">
+      <div class="prog-bar-label"><span>Alimentación — mejora relativa 65+</span><span class="green-txt">−2.9 pp</span></div>
+      <div class="prog-bar-track"><div class="prog-bar-fill" data-width="58" style="background:var(--green-bright);"></div></div>
+    </div>
+    <div class="prog-bar-row">
+      <div class="prog-bar-label"><span>Vivienda — mejora relativa 65+</span><span class="green-txt">−0.5 pp</span></div>
+      <div class="prog-bar-track"><div class="prog-bar-fill" data-width="10" style="background:var(--green-bright);"></div></div>
+    </div>
+  </div>
+  <p>Los adultos mayores pudieron comer mejor — no porque México en general mejorara, sino porque <span class="highlight">este grupo específico mejoró relativamente más.</span></p>
+  <p style="font-family:Arial,sans-serif;font-size:12px;color:#aaa;">Fuente: ENIGH 2016–2024, INEGI. Comparación entre grupo 65+ y grupo 60–64 antes y después de 2022.</p>
+</div>
+</div>
+
+<!-- EL GIRO -->
+<div class="section-wrap" style="background:#fff8f8;">
+<div class="scene" id="s4">
+  <h2>Pero hay otro resultado. En dirección contraria.</h2>
+  <div class="stats-grid">
+    <div class="stat-card" style="background:#fff0f0;border-color:#ffcdd2;">
+      <div class="stat-arrow" style="color:var(--red-bright);">↑</div>
+      <div class="stat-value red-txt"><span class="counter" data-target="2.9" data-prefix="+" data-suffix=" pp">+0 pp</span></div>
+      <div class="stat-label">Carencia de acceso a salud</div>
+      <div class="stat-sig">Resultado igual de sólido estadísticamente</div>
+    </div>
+  </div>
+  <p>En el mismo período en que la pensión mejoró la seguridad alimentaria, <span class="highlight">más adultos mayores quedaron sin acceso formal a servicios de salud.</span> El desmantelamiento del Seguro Popular y la transición al INSABI afectaron desproporcionadamente a quienes más dependen del sistema público.</p>
+  <div class="img-overlay-wrap" id="img4">
+    <img src="https://sanluc2-maker.github.io/explorador_carencias/hombre1.jpg" alt="Hombre adulto mayor"/>
+    <div class="img-overlay-text">
+      <div class="quote-ov">"El doctor ya no está tan cerca como antes. A veces camino mucho para que me atiendan. Eso no ha mejorado."</div>
+      <div class="author-ov">— Esperanza L. · 74 años · Chiapas · Testimonio presencial</div>
+    </div>
+  </div>
+  <div class="quote-block" style="border-left-color:var(--red-bright);">
+    <div class="quote-text">"Me cambiaron de médico tres veces en dos años. No sé bien a qué programa pertenezco ahora. Eso me preocupa."</div>
+    <div class="quote-author">— Aurelio T. · 71 años · Ciudad de México · Testimonio presencial</div>
+  </div>
+</div>
+</div>
+
+<!-- CERO NO SIGNIFICA NADA - MÁS VISUAL -->
+<div class="section-wrap">
+<div class="scene" id="s5">
+  <h2>¿Y si sumamos todo? El resultado sorprende.</h2>
+  <p>Cuando se combinan los tres efectos en un solo índice, el resultado es prácticamente cero. Un titular podría decir: <em>"La pensión no cambió nada"</em>. Técnicamente correcto. Pero profundamente engañoso.</p>
+
+  <div class="cero-wrap" id="ceroWrap">
+    <div class="cero-row">
+      <div class="cero-label">Alimentación</div>
+      <div class="cero-track">
+        <div class="cero-fill" data-width="58" style="background:var(--green-bright);">
+          <span class="cero-val">mejoró −2.9pp</span>
+        </div>
+      </div>
+    </div>
+    <div class="cero-row">
+      <div class="cero-label">Vivienda</div>
+      <div class="cero-track">
+        <div class="cero-fill" data-width="10" style="background:#81C784;">
+          <span class="cero-val">mejoró −0.5pp</span>
+        </div>
+      </div>
+    </div>
+    <div class="cero-row">
+      <div class="cero-label">Salud</div>
+      <div class="cero-track">
+        <div class="cero-fill" data-width="58" style="background:var(--red-bright);">
+          <span class="cero-val">empeoró +2.9pp</span>
+        </div>
+      </div>
+    </div>
+    <div class="cero-row">
+      <div class="cero-label" style="font-weight:700;color:#1a1a1a;">Índice total</div>
+      <div class="cero-track" style="background:#e8e8e8;">
+        <div class="cero-fill" data-width="3" style="background:#bbb;">
+          <span class="cero-val" style="color:#666;">≈ 0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cero-note">
+    💡 <strong>Cero no significa que nada cambió.</strong> Significa que dos fuerzas opuestas de igual magnitud se cancelaron entre sí. La mejora en alimentación neutralizó el deterioro en salud. El promedio esconde la paradoja.
+  </div>
+</div>
+</div>
+
+<!-- EL MAPA — MÁS VISUAL -->
+<div class="section-wrap" style="background:#fafafa;">
+<div class="scene" id="s6">
+  <h2>Lo que dicen en redes: voces de todo el país</h2>
+  <p>El promedio nacional esconde diferencias profundas. Aquí van comentarios reales — tanto positivos como negativos — de distintas partes de México.</p>
+
+  <div class="balance-wrap">
+    <div class="balance-col pos">
+      <div class="balance-header" style="color:var(--green);">✓ VOCES DE APOYO</div>
+      <div class="balance-item">"Señor Presidente mis papás le están muy agradecidos. Somos de Aguascalientes..."<br><span style="font-family:Arial;font-size:11px;color:#aaa;">Aguascalientes · 2024</span></div>
+      <div class="balance-item">"¡Qué bien! El programa de pensiones a adultos mayores está trabajando."<br><span style="font-family:Arial;font-size:11px;color:#aaa;">Veracruz · 2019</span></div>
+      <div class="balance-item">"Muchas gracias porque el único que ha cumplido con justicia y honestidad."<br><span style="font-family:Arial;font-size:11px;color:#aaa;">México · 2024</span></div>
+    </div>
+    <div class="balance-col neg">
+      <div class="balance-header" style="color:var(--red);">✗ VOCES CRÍTICAS</div>
+      <div class="balance-item">"A mis vecinos les tardaron 8 meses en entregar las tarjetas. Alguien se lo robó."<br><span style="font-family:Arial;font-size:11px;color:#aaa;">Sonora · 2023</span></div>
+      <div class="balance-item">"En Baja California nunca contestan los teléfonos de la Delegación del Bienestar."<br><span style="font-family:Arial;font-size:11px;color:#aaa;">Baja California · 2019</span></div>
+      <div class="balance-item">"Fui a las oficinas y nada de adelanto, no INAPAM, no aguinaldo. Qué desastre."<br><span style="font-family:Arial;font-size:11px;color:#aaa;">Baja California · 2025</span></div>
+    </div>
+  </div>
+
+  <p>La emoción que más cayó entre pre-2022 y post-2022 no fue el enojo — fue la <span class="highlight">confianza</span>. Los comentarios pasaron de agradecer a preguntar, exigir, dudar.</p>
+  <div class="prog-bar-wrap" id="bars7">
+    <div class="prog-bar-row">
+      <div class="prog-bar-label"><span>Confianza en el sistema pre-2022</span><span style="color:var(--teal);">1.87 pts</span></div>
+      <div class="prog-bar-track"><div class="prog-bar-fill" data-width="93" style="background:var(--teal);"></div></div>
+    </div>
+    <div class="prog-bar-row">
+      <div class="prog-bar-label"><span>Confianza en el sistema post-2022</span><span class="red-txt">0.98 pts (−47%)</span></div>
+      <div class="prog-bar-track"><div class="prog-bar-fill" data-width="49" style="background:var(--red-bright);"></div></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- LA RESPUESTA — MÁS VISUAL -->
+<div class="section-wrap">
+<div class="scene" id="s8">
+  <h2>¿Estuvo mejor el grupo de 65+ después de 2022?</h2>
+  <p style="font-size:18px;color:#1a1a1a;font-weight:bold;">Depende de qué entendemos por "mejor".</p>
+
+  <div class="answer-visual">
+    <div class="answer-row">
+      <div class="answer-icon">🍽️</div>
+      <div class="answer-content">
+        <div class="answer-dim" style="color:var(--green);">Alimentación</div>
+        <div class="answer-verdict" style="color:var(--green);">Sí mejoró</div>
+        <div class="answer-desc">Los adultos mayores pudieron comer mejor que el grupo de 60–64 años después de 2022. El resultado es muy sólido.</div>
+      </div>
+    </div>
+    <div class="answer-row">
+      <div class="answer-icon">🏠</div>
+      <div class="answer-content">
+        <div class="answer-dim" style="color:var(--green);">Vivienda</div>
+        <div class="answer-verdict" style="color:var(--green);">Mejoró ligeramente</div>
+        <div class="answer-desc">Hubo una mejora pequeña pero real en condiciones de vivienda.</div>
+      </div>
+    </div>
+    <div class="answer-row" style="background:#fff5f5;border-color:#ffcdd2;">
+      <div class="answer-icon">🏥</div>
+      <div class="answer-content">
+        <div class="answer-dim" style="color:var(--red);">Salud</div>
+        <div class="answer-verdict" style="color:var(--red);">No mejoró — empeoró</div>
+        <div class="answer-desc">Más adultos mayores quedaron sin acceso a servicios de salud, con la misma contundencia estadística que la mejora en alimentación.</div>
+      </div>
+    </div>
+    <div class="answer-row" style="background:#fffbf0;border-color:#ffe082;">
+      <div class="answer-icon">📱</div>
+      <div class="answer-content">
+        <div class="answer-dim" style="color:#a05c00;">Confianza en el sistema</div>
+        <div class="answer-verdict" style="color:#a05c00;">Cayó 47%</div>
+        <div class="answer-desc">La conversación pública pasó de la gratitud a la incertidumbre. Las redes lo capturaron antes que las encuestas.</div>
+      </div>
+    </div>
+  </div>
+
+  <p>Y para una persona mayor, la incertidumbre sobre la próxima cita médica o el próximo depósito puede ser tan costosa como la carencia material que el programa intenta resolver.</p>
+
+  <div class="divider"></div>
+
+  <div class="cierre">"Medir el bienestar es siempre incompleto. Pero escuchar las voces de quienes lo viven acerca un poco más a la verdad."</div>
+</div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer-note">
+  <p><strong style="color:#888;">Metodología</strong></p>
+  <p>Análisis estadístico: ENIGH 2016–2024 (INEGI). Comparación entre grupo 65+ y grupo 60–64 antes y después de 2022, con controles por entidad y año. Índice compuesto con ponderación igual (33.3% c/u).</p>
+  <p>Análisis de sentimiento: comentarios de YouTube sobre Pensión Bienestar, 2019–2026, toda la población. Clasificación NRC. Inferencia geográfica por menciones en texto.</p>
+  <p>Testimonios: Entrevistas presenciales realizadas en Hub Tecnológico de Monterrey. Nombres modificados para proteger la identidad. Imágenes generadas con IA con fines ilustrativos.</p>
+  <p style="margin-top:1rem;color:#ccc;">Elaboración propia · Sandra Lucía Martínez Flores · A01794929 · Proyecto Digital II · ITESM 2026</p>
+</div>
+
+<script>
+window.addEventListener('scroll', () => {
+  const total = document.documentElement.scrollHeight - window.innerHeight;
+  document.getElementById('progress').style.width = (window.scrollY / total * 100) + '%';
+});
+
+const seen = new Set();
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (!e.isIntersecting || seen.has(e.target)) return;
+    seen.add(e.target);
+    const el = e.target;
+    if (el.classList.contains('scene')) el.classList.add('visible');
+    if (el.classList.contains('img-overlay-wrap')) setTimeout(() => el.classList.add('revealed'), 300);
+    el.querySelectorAll('.counter').forEach(animateCounter);
+    el.querySelectorAll('.prog-bar-fill, .cero-fill').forEach(b => {
+      setTimeout(() => { b.style.width = b.dataset.width + '%'; }, 300);
+    });
+    if (el.id === 's1') setTimeout(drawTimeline, 400);
+  });
+}, { threshold: 0.18 });
+
+document.querySelectorAll('.scene, .img-overlay-wrap').forEach(el => obs.observe(el));
+
+function animateCounter(el) {
+  const target = parseFloat(el.dataset.target);
+  const prefix = el.dataset.prefix || '';
+  const suffix = el.dataset.suffix || '';
+  const start = performance.now();
+  const dur = 1400;
+  (function step(now) {
+    const p = Math.min((now - start) / dur, 1);
+    const ease = 1 - Math.pow(1 - p, 3);
+    const val = target * ease;
+    el.textContent = prefix + (Number.isInteger(target) ? Math.round(val) : val.toFixed(1)) + suffix;
+    if (p < 1) requestAnimationFrame(step);
+  })(start);
+}
+
+function drawTimeline() {
+  const data = [
+    {y:'2019',pct:49},{y:'2020',pct:47},{y:'2021',pct:36},
+    {y:'2022',pct:78},{y:'2023',pct:38},{y:'2024',pct:66},
+    {y:'2025',pct:47},{y:'2026',pct:15}
+  ];
+  const W=700,H=180,pL=60,pR=20,pT=20,pB=30;
+  const w=W-pL-pR, h=H-pT-pB;
+  const xStep = w/(data.length-1);
+  const yS = v => pT + h - (v/100)*h;
+  const pts = data.map((d,i)=>({x:pL+i*xStep, y:yS(d.pct), label:d.y, pct:d.pct, isPeak:d.y==='2022'}));
+  const dStr = pts.map((p,i)=>(i===0?`M${p.x},${p.y}`:`L${p.x},${p.y}`)).join(' ');
+  const aStr = `M${pts[0].x},${H-pB} `+pts.map(p=>`L${p.x},${p.y}`).join(' ')+` L${pts[pts.length-1].x},${H-pB}Z`;
+  const lp = document.getElementById('linePath');
+  const ap = document.getElementById('areaPath');
+  lp.setAttribute('d', dStr);
+  ap.setAttribute('d', aStr);
+  const len = lp.getTotalLength ? lp.getTotalLength() : 800;
+  lp.style.strokeDasharray = len;
+  lp.style.strokeDashoffset = len;
+  requestAnimationFrame(()=>{
+    lp.style.transition = 'stroke-dashoffset 2s ease';
+    lp.style.strokeDashoffset = '0';
+    ap.style.transition = 'opacity 2s ease';
+    ap.style.opacity = '1';
+  });
+  const dotsG = document.getElementById('svgDots');
+  const labG = document.getElementById('svgLabels');
+  pts.forEach((p,i)=>{
+    setTimeout(()=>{
+      const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      c.setAttribute('cx',p.x); c.setAttribute('cy',p.y);
+      c.setAttribute('r', p.isPeak?5:3.5);
+      c.setAttribute('fill', p.isPeak?'#F59E0B':'#007B7F');
+      c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','1.5');
+      dotsG.appendChild(c);
+      const vt = document.createElementNS('http://www.w3.org/2000/svg','text');
+      vt.setAttribute('x',p.x); vt.setAttribute('y',p.y-8);
+      vt.setAttribute('font-family','Arial'); vt.setAttribute('font-size','9');
+      vt.setAttribute('fill', p.isPeak?'#F59E0B':'#007B7F');
+      vt.setAttribute('text-anchor','middle');
+      vt.textContent = p.pct+'%';
+      dotsG.appendChild(vt);
+      const xt = document.createElementNS('http://www.w3.org/2000/svg','text');
+      xt.setAttribute('x',p.x); xt.setAttribute('y',H-pB+14);
+      xt.setAttribute('font-family','Arial'); xt.setAttribute('font-size','9');
+      xt.setAttribute('fill','#aaa'); xt.setAttribute('text-anchor','middle');
+      xt.textContent = p.label;
+      labG.appendChild(xt);
+    }, 1800 + i*80);
+  });
+  const peak = pts[3];
+  setTimeout(()=>{
+    const mk = document.getElementById('marker2022');
+    const ml = document.getElementById('markerLabel');
+    mk.setAttribute('x1',peak.x); mk.setAttribute('x2',peak.x);
+    ml.setAttribute('x',peak.x);
+    mk.style.transition = 'opacity 0.5s';
+    ml.style.transition = 'opacity 0.5s';
+    mk.style.opacity = '1'; ml.style.opacity = '1';
+  }, 2500);
+}
+</script>
+</body>
+</html>
