@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Testimonios Pensión Bienestar</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #fff;
+      color: #1a1a1a;
+    }
+
+    .container {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 28px 20px 20px;
+    }
+
+    h1 {
+      font-size: clamp(1rem, 2.8vw, 1.5rem);
+      font-weight: 700;
+      line-height: 1.3;
+      color: #111;
+      margin-bottom: 12px;
+    }
+
+    .counter {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.88rem;
+      color: #555;
+      background: #f4f4f4;
+      border-radius: 8px;
+      padding: 7px 14px;
+      margin-bottom: 18px;
+    }
+    .counter strong { color: #1a6b3c; }
+
+    /* ── Map ── */
+    #map-wrapper {
+      width: 100%;
+      position: relative;
+    }
+
+    svg.map-svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .state-path {
+      stroke: #fff;
+      stroke-width: 0.6;
+      cursor: pointer;
+      transition: stroke-width 0.1s, opacity 0.1s;
+    }
+    .state-path:hover {
+      stroke: #333;
+      stroke-width: 1.8;
+      opacity: 0.85;
+    }
+    .state-path.no-data { fill: #e3e3e3; }
+
+    /* ── Tooltip ── */
+    #tooltip {
+      position: fixed;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 14px 16px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.13);
+      pointer-events: none;
+      max-width: 300px;
+      min-width: 200px;
+      font-size: 0.82rem;
+      line-height: 1.55;
+      z-index: 9999;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 0.15s, transform 0.15s;
+    }
+    #tooltip.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .tt-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #111;
+      margin-bottom: 4px;
+    }
+    .tt-score {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .tt-meta {
+      font-size: 0.78rem;
+      color: #777;
+      margin-bottom: 10px;
+    }
+    .tt-divider {
+      border: none;
+      border-top: 1px solid #eee;
+      margin: 8px 0;
+    }
+    .tt-person {
+      margin-bottom: 8px;
+    }
+    .tt-person-head {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 3px;
+    }
+    .tt-dim {
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+      font-size: 0.8rem;
+      color: #333;
+      line-height: 1.4;
+    }
+    .tt-dim-label {
+      color: #aaa;
+      font-size: 0.73rem;
+      white-space: nowrap;
+    }
+    .tt-comment {
+      font-style: italic;
+      color: #555;
+      font-size: 0.78rem;
+      border-left: 3px solid #e0e0e0;
+      padding-left: 8px;
+      margin-top: 5px;
+    }
+    .tt-more {
+      font-size: 0.77rem;
+      color: #aaa;
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    /* ── Legend ── */
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+      font-size: 0.78rem;
+      color: #666;
+    }
+    .legend-gradient {
+      width: 140px;
+      height: 12px;
+      border-radius: 6px;
+      background: linear-gradient(to right, #d9534f, #f5c842, #2e9e5b);
+    }
+    .legend-nodata {
+      width: 14px;
+      height: 14px;
+      background: #e3e3e3;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    /* ── Loading / Error ── */
+    .status-msg {
+      text-align: center;
+      padding: 60px 20px;
+      color: #aaa;
+      font-size: 0.9rem;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 22px;
+      font-size: 0.73rem;
+      color: #bbb;
+      text-align: center;
+    }
+
+    @media (max-width: 500px) {
+      #tooltip { max-width: 240px; font-size: 0.78rem; }
+      h1 { font-size: 0.97rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Lo que dice la gente: testimonios sobre la Pensión Bienestar</h1>
+
+  <div class="counter" id="counter">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1a6b3c" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    Cargando datos en tiempo real…
+  </div>
+
+  <div id="map-wrapper">
+    <div class="status-msg" id="status-msg">Cargando mapa y respuestas…</div>
+  </div>
+
+  <div class="legend-row" id="legend" style="display:none">
+    <span>Empeoró</span>
+    <div class="legend-gradient"></div>
+    <span>Mejoró</span>
+    <span style="margin-left:8px; display:flex; align-items:center; gap:5px;">
+      <div class="legend-nodata"></div> Sin respuestas
+    </span>
+  </div>
+
+  <div class="footer">
+    Datos actualizados en tiempo real · Proyecto académico ITESM 2026
+  </div>
+</div>
+
+<div id="tooltip"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════════════════════════════════════ */
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT4-m9UrZMW9GelKijCsJcSIaSRLrF_cu2seSyyNJ52MbxLbhibFoAMldY-B0KVFwzJefdqT_klYVMJ/pub?gid=0&single=true&output=csv';
+
+// GeoJSON sources in priority order (first that returns valid data wins)
+const GEO_SOURCES = [
+  'https://raw.githubusercontent.com/angelnmara/geojson/master/mexicoHigh.json',
+  'https://raw.githubusercontent.com/resuelve/mx-municipalities/master/estados.json',
+  'https://raw.githubusercontent.com/PhantomInsights/mexican-geojson/master/states/states.geojson',
+];
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STATE NAME NORMALIZATION
+═══════════════════════════════════════════════════════════════════════════ */
+// Variants the form might receive → canonical INEGI name
+const STATE_ALIASES = {
+  'coahuila':                   'Coahuila de Zaragoza',
+  'michoacan':                  'Michoacán de Ocampo',
+  'michoacan de ocampo':        'Michoacán de Ocampo',
+  'veracruz':                   'Veracruz de Ignacio de la Llave',
+  'veracruz llave':             'Veracruz de Ignacio de la Llave',
+  'estado de mexico':           'México',
+  'estado de méxico':           'México',
+  'edomex':                     'México',
+  'cdmx':                       'Ciudad de México',
+  'ciudad de mexico':           'Ciudad de México',
+  'df':                         'Ciudad de México',
+  'distrito federal':           'Ciudad de México',
+  'quintana roo':               'Quintana Roo',
+  'bcs':                        'Baja California Sur',
+  'bc':                         'Baja California',
+  'nayarit':                    'Nayarit',
+  'slp':                        'San Luis Potosí',
+  'san luis potosi':            'San Luis Potosí',
+};
+
+function deaccent(s) {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+function norm(s) {
+  return deaccent((s || '').trim()).toLowerCase().replace(/\s+/g, ' ');
+}
+
+function canonicalState(raw) {
+  const n = norm(raw);
+  if (STATE_ALIASES[n]) return STATE_ALIASES[n];
+  // Prefix match (e.g. "Coahuila" → "Coahuila de Zaragoza")
+  for (const [alias, canon] of Object.entries(STATE_ALIASES)) {
+    if (n === alias.split(' ')[0] || alias.startsWith(n + ' ')) return canon;
+  }
+  return (raw || '').trim();
+}
+
+// Extract state name from GeoJSON feature properties (handles multiple schemas)
+function geoStateName(props) {
+  return props.NOMGEO || props.NOM_ENT || props.ESTADO ||
+         props.nombre || props.name   || props.Name   ||
+         props.state  || '';
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCORING
+   alimentación / salud → structured ("Sí, mejoró" | "Igual" | "No mejoró")
+   hogar → semi-free ("Si" | "No" | descriptive)
+   Returns: +1 | 0 | -1 | null (null = no scoreable answer)
+═══════════════════════════════════════════════════════════════════════════ */
+function scoreField(raw) {
+  if (!raw) return null;
+  const v = norm(raw);
+  if (!v || v === 'sin comentarios' || v === 'n/a' || v === 'na') return null;
+
+  // Structured positive / negative
+  if (/si[,\s]+mejoro/.test(v) || v === 'si mejoro') return  1;
+  if (/no\s+mejoro/.test(v))                          return -1;
+  if (v === 'igual')                                  return  0;
+
+  // Plain yes / no
+  if (/^si\s*$/.test(v) || /^s[ií]\b/.test(v))       return  1;
+  if (/^no\s*$/.test(v))                              return -1;
+
+  // Descriptive positive keywords
+  const positiveRe = /mejoro|solvencia|paseos|diversiones|mucho|muchisimo|bastante|resuelto|alcanza|excelente|bien/;
+  const negativeRe = /empeoro|difici|sin acceso|mal\b|menos|bajo|nada/;
+
+  if (positiveRe.test(v) && !negativeRe.test(v)) return  1;
+  if (negativeRe.test(v) && !positiveRe.test(v)) return -1;
+
+  // Longer descriptive answers that don't start with "no" are usually positive
+  if (v.length > 12 && !/^no\b/.test(v)) return 1;
+
+  return null;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CSV PROCESSING
+═══════════════════════════════════════════════════════════════════════════ */
+function processCSV(csvText) {
+  const rows = d3.csvParse(csvText);
+  const cols = rows.columns;
+
+  // Column detection (case/accent-insensitive)
+  const find = re => cols.find(c => re.test(c)) || '';
+  const colState  = find(/estado/i);
+  const colAge    = find(/cu.ntos.a.os|edad/i);
+  const colAlim   = find(/alimentaci/i);
+  const colSalud  = find(/salud/i);
+  const colHogar  = find(/hogar/i);
+  const colComent = find(/decirle|gobierno/i);
+
+  if (!colState) {
+    console.warn('No se detectó la columna de estado. Columnas disponibles:', cols);
+  }
+
+  const stateMap = new Map(); // canonical name → aggregated data
+
+  for (const row of rows) {
+    const rawState = row[colState];
+    if (!rawState || !rawState.trim()) continue;
+
+    const state = canonicalState(rawState);
+
+    // Age: strip non-digits
+    const ageNum = parseInt((row[colAge] || '').replace(/\D/g, ''), 10);
+    const age = isNaN(ageNum) ? null : ageNum;
+
+    // Dimension scores
+    const sAlim  = scoreField(row[colAlim]);
+    const sSalud = scoreField(row[colSalud]);
+    const sHogar = scoreField(row[colHogar]);
+
+    // Free-form comment — filter out non-answers
+    const rawComent = (row[colComent] || '').trim();
+    const isBlankComment = /^(sin\s+comentario|no\b|s\/n|\s*)$/i.test(rawComent);
+    const coment = isBlankComment ? '' : rawComent;
+
+    if (!stateMap.has(state)) {
+      stateMap.set(state, { state, count: 0, ages: [], allScores: [], responses: [] });
+    }
+
+    const s = stateMap.get(state);
+    s.count++;
+    if (age !== null) s.ages.push(age);
+    [sAlim, sSalud, sHogar].filter(x => x !== null).forEach(v => s.allScores.push(v));
+    s.responses.push({
+      age,
+      alim:   (row[colAlim]  || '').trim(),
+      salud:  (row[colSalud] || '').trim(),
+      hogar:  (row[colHogar] || '').trim(),
+      coment,
+    });
+  }
+
+  // Compute derived values
+  for (const s of stateMap.values()) {
+    s.avgAge = s.ages.length
+      ? Math.round(s.ages.reduce((a, b) => a + b, 0) / s.ages.length)
+      : null;
+    s.score = s.allScores.length
+      ? +(s.allScores.reduce((a, b) => a + b, 0) / s.allScores.length).toFixed(2)
+      : null;
+    const positives = s.allScores.filter(v => v === 1).length;
+    s.pctMejoro = s.allScores.length
+      ? Math.round((positives / s.allScores.length) * 100)
+      : null;
+  }
+
+  return stateMap;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MAP RENDERING
+═══════════════════════════════════════════════════════════════════════════ */
+function renderMap(geoData, stateMap) {
+  const W = 960, H = 580;
+
+  const svg = d3.select('#map-wrapper')
+    .append('svg')
+    .attr('class', 'map-svg')
+    .attr('viewBox', `0 0 ${W} ${H}`)
+    .attr('preserveAspectRatio', 'xMidYMid meet');
+
+  const projection = d3.geoMercator()
+    .center([-102, 23.5])
+    .scale(1280)
+    .translate([W / 2, H / 2]);
+
+  const pathGen = d3.geoPath().projection(projection);
+
+  // Color scale: red → amber → green
+  const colorScale = d3.scaleLinear()
+    .domain([-1, 0, 1])
+    .range(['#d9534f', '#f5c842', '#2e9e5b'])
+    .clamp(true);
+
+  // Build lookup: norm(geoName) → canonical name in stateMap
+  const lookup = buildLookup(stateMap);
+
+  const features = Array.isArray(geoData.features) ? geoData.features : [];
+
+  svg.selectAll('.state-path')
+    .data(features)
+    .join('path')
+    .attr('class', 'state-path')
+    .attr('d', pathGen)
+    .attr('fill', d => {
+      const data = resolveState(d.properties, lookup, stateMap);
+      if (!data || data.score === null) return '#e3e3e3';
+      return colorScale(data.score);
+    })
+    .classed('no-data', d => {
+      const data = resolveState(d.properties, lookup, stateMap);
+      return !data || data.score === null;
+    })
+    .on('mousemove', (event, d) => {
+      const gName = geoStateName(d.properties);
+      const data  = resolveState(d.properties, lookup, stateMap);
+      showTooltip(event, gName, data);
+    })
+    .on('mouseleave', hideTooltip);
+}
+
+function buildLookup(stateMap) {
+  const lookup = new Map();
+  for (const name of stateMap.keys()) {
+    lookup.set(norm(name), name);
+    // Also index by first word for partial matches
+    const firstWord = norm(name).split(' ')[0];
+    if (!lookup.has(firstWord)) lookup.set(firstWord, name);
+  }
+  return lookup;
+}
+
+function resolveState(props, lookup, stateMap) {
+  const gName = geoStateName(props);
+  const n = norm(gName);
+
+  // Try direct match
+  let key = lookup.get(n);
+  // Try after alias normalization
+  if (!key) key = lookup.get(norm(canonicalState(gName)));
+  // Partial: first two words
+  if (!key) {
+    const parts = n.split(' ');
+    key = lookup.get(parts.slice(0, 2).join(' ')) || lookup.get(parts[0]);
+  }
+
+  return key ? stateMap.get(key) : null;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TOOLTIP
+═══════════════════════════════════════════════════════════════════════════ */
+const tooltip = document.getElementById('tooltip');
+
+const MAX_PERSONS_SHOWN = 4;
+
+function scoreLabel(score) {
+  if (score === null) return '';
+  if (score >  0.1) return `✅ Mejoró`;
+  if (score < -0.1) return `❌ Empeoró`;
+  return `⚠️ Mixto`;
+}
+
+function dimIcon(rawVal) {
+  const v = norm(rawVal || '');
+  if (!v || v === 'sin comentarios') return '·';
+  if (/si[,\s]*mejoro/.test(v) || (/^si\b/.test(v) && !v.includes('no'))) return '✅';
+  if (/no\s*mejoro/.test(v) || /^no\b/.test(v)) return '❌';
+  if (v === 'igual') return '➖';
+  // Descriptive positive
+  if (v.length > 6 && !/^no\b/.test(v)) return '✅';
+  return '·';
+}
+
+function truncate(s, n) {
+  return s.length > n ? s.slice(0, n - 1) + '…' : s;
+}
+
+function showTooltip(event, geoName, data) {
+  if (!data) {
+    tooltip.innerHTML = `
+      <div class="tt-name">${geoName}</div>
+      <div style="color:#bbb;font-size:0.8rem;margin-top:4px">Sin respuestas registradas</div>`;
+  } else {
+    const shown = data.responses.slice(0, MAX_PERSONS_SHOWN);
+    const extra = data.count - shown.length;
+
+    const personsHtml = shown.map((r, i) => {
+      const hogarShort = truncate(r.hogar || '—', 45);
+      const commentHtml = r.coment
+        ? `<div class="tt-comment">"${truncate(r.coment, 110)}"</div>`
+        : '';
+      return `
+        <div class="tt-person">
+          <div class="tt-person-head">Persona ${i + 1}${r.age ? ` · ${r.age} años` : ''}</div>
+          <div class="tt-dim"><span>${dimIcon(r.alim)}</span><span class="tt-dim-label">Alim.</span><span>${r.alim || '—'}</span></div>
+          <div class="tt-dim"><span>${dimIcon(r.salud)}</span><span class="tt-dim-label">Salud</span><span>${r.salud || '—'}</span></div>
+          <div class="tt-dim"><span>${dimIcon(r.hogar)}</span><span class="tt-dim-label">Hogar</span><span>${hogarShort}</span></div>
+          ${commentHtml}
+        </div>`;
+    }).join('<hr class="tt-divider">');
+
+    const moreHtml = extra > 0
+      ? `<div class="tt-more">… y ${extra} respuesta${extra > 1 ? 's' : ''} más</div>`
+      : '';
+
+    const scoreStr = data.score !== null
+      ? `${scoreLabel(data.score)} <span style="color:#aaa;font-weight:400">(${data.score > 0 ? '+' : ''}${data.score})</span>`
+      : 'Sin datos suficientes';
+
+    tooltip.innerHTML = `
+      <div class="tt-name">${geoName}</div>
+      <div class="tt-score">${scoreStr}</div>
+      <div class="tt-meta">
+        ${data.count} ${data.count === 1 ? 'respuesta' : 'respuestas'}
+        ${data.avgAge ? `· Edad prom. ${data.avgAge} años` : ''}
+        ${data.pctMejoro !== null ? `· ${data.pctMejoro}% mejoró` : ''}
+      </div>
+      <hr class="tt-divider">
+      ${personsHtml}
+      ${moreHtml}`;
+  }
+
+  positionTooltip(event);
+  tooltip.classList.add('visible');
+}
+
+function positionTooltip(event) {
+  const pad = 16;
+  const tw  = tooltip.offsetWidth  || 300;
+  const th  = tooltip.offsetHeight || 200;
+  let x = event.clientX + pad;
+  let y = event.clientY + pad;
+  if (x + tw > window.innerWidth  - pad) x = event.clientX - tw - pad;
+  if (y + th > window.innerHeight - pad) y = event.clientY - th - pad;
+  tooltip.style.left = `${x}px`;
+  tooltip.style.top  = `${y}px`;
+}
+
+document.addEventListener('mousemove', e => {
+  if (tooltip.classList.contains('visible')) positionTooltip(e);
+});
+
+function hideTooltip() {
+  tooltip.classList.remove('visible');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COUNTER
+═══════════════════════════════════════════════════════════════════════════ */
+function updateCounter(stateMap) {
+  const totalPeople = [...stateMap.values()].reduce((s, d) => s + d.count, 0);
+  const totalStates = stateMap.size;
+  document.getElementById('counter').innerHTML = `
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1a6b3c" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <strong>${totalPeople}</strong> ${totalPeople === 1 ? 'persona ha' : 'personas han'} respondido desde
+    <strong>${totalStates}</strong> ${totalStates === 1 ? 'estado' : 'estados'}`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GeoJSON LOADER (tries sources in order, picks first valid response)
+═══════════════════════════════════════════════════════════════════════════ */
+async function fetchGeo() {
+  for (const url of GEO_SOURCES) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (data && Array.isArray(data.features) && data.features.length > 0) return data;
+    } catch { /* try next */ }
+  }
+  throw new Error('No se pudo cargar el GeoJSON de México desde ninguna fuente.');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BOOT
+═══════════════════════════════════════════════════════════════════════════ */
+async function main() {
+  try {
+    const [csvText, geoData] = await Promise.all([
+      fetch(CSV_URL).then(r => { if (!r.ok) throw new Error('CSV'); return r.text(); }),
+      fetchGeo(),
+    ]);
+
+    const stateMap = processCSV(csvText);
+    document.getElementById('status-msg')?.remove();
+    renderMap(geoData, stateMap);
+    updateCounter(stateMap);
+    document.getElementById('legend').style.display = 'flex';
+  } catch (err) {
+    const msg = document.getElementById('status-msg');
+    if (msg) msg.textContent = `Error cargando datos: ${err.message}. Verifica tu conexión.`;
+    console.error(err);
+  }
+}
+
+main();
+</script>
+</body>
+</html>
