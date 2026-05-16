@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Historias — Mapa crítico</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --teal: #007B7F;
+    --teal-light: #E8F5F5;
+    --dark: #1a1a1a;
+    --ink: #2c2620;
+    --paper: #ffffff;
+    --paper2: #f7f7f7;
+    --gray: #888;
+    --border: #e5e5e5;
+    --green: #3B6D11;
+    --red: #A32D2D;
+    --amber: #7a4f1a;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Lora', Georgia, serif;
+    background: #ffffff;
+    color: var(--ink);
+    overflow-x: hidden;
+  }
+
+  /* ── PORTADA ── */
+  .portada {
+    background: var(--ink);
+    color: #f0ece4;
+    padding: 5rem 2rem 4rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .portada::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 39px,
+      rgba(255,255,255,0.03) 39px, rgba(255,255,255,0.03) 40px
+    );
+  }
+  .portada-label {
+    font-family: Arial, sans-serif;
+    font-size: 11px; letter-spacing: 4px;
+    text-transform: uppercase; color: #9b8e7e;
+    margin-bottom: 1.5rem; position: relative;
+  }
+  .portada-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: clamp(32px, 6vw, 56px);
+    font-weight: 400; line-height: 1.2;
+    color: #f0ece4; margin-bottom: 1rem;
+    position: relative;
+  }
+  .portada-title em {
+    font-style: italic; color: #c9b89a;
+  }
+  .portada-ornamento {
+    color: #4a3f35; font-size: 28px;
+    letter-spacing: 8px; margin: 1.5rem 0;
+    position: relative;
+  }
+  .portada-desc {
+    font-family: 'Lora', serif;
+    font-size: 16px; color: #9b8e7e;
+    max-width: 520px; margin: 0 auto;
+    line-height: 1.8; position: relative;
+  }
+
+  /* ── WRAPPER ── */
+  .wrapper { max-width: 960px; margin: 0 auto; }
+
+  /* ── SEPARADOR ── */
+  .sep {
+    text-align: center; padding: 2.5rem 0;
+    color: #c9b89a; font-size: 22px;
+    letter-spacing: 12px;
+  }
+  .sep-line {
+    display: flex; align-items: center;
+    gap: 1rem; padding: 2rem 2rem 0;
+    max-width: 960px; margin: 0 auto;
+  }
+  .sep-line span {
+    font-family: Arial, sans-serif;
+    font-size: 11px; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--teal);
+    white-space: nowrap;
+  }
+  .sep-line::before, .sep-line::after {
+    content: ''; flex: 1; height: 1px;
+    background: var(--border);
+  }
+
+  /* ── HISTORIA ESTELAR ── */
+  .historia {
+    padding: 3rem 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .historia:last-of-type { border-bottom: none; }
+
+  .historia-numero {
+    font-family: 'Playfair Display', serif;
+    font-size: 72px; color: #e0d9ce;
+    line-height: 1; float: left;
+    margin-right: 1rem; margin-top: -0.15em;
+    font-weight: 400;
+  }
+
+  .historia-meta {
+    font-family: Arial, sans-serif;
+    font-size: 11px; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--teal);
+    margin-bottom: 0.75rem;
+  }
+
+  .historia-frase {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(18px, 3vw, 24px);
+    font-style: italic; color: var(--ink);
+    line-height: 1.45; margin-bottom: 1.5rem;
+    border-left: 3px solid var(--teal);
+    padding-left: 1.25rem;
+    clear: both;
+  }
+
+  .historia-texto {
+    font-size: 16px; line-height: 1.9;
+    color: #3d3530; margin-bottom: 1.25rem;
+  }
+  .historia-texto em { font-style: italic; color: var(--ink); }
+
+  .historia-dims {
+    display: flex; gap: 8px;
+    flex-wrap: wrap; margin-top: 1.5rem;
+  }
+  .dim {
+    font-family: Arial, sans-serif;
+    font-size: 12px; padding: 5px 14px;
+    border-radius: 99px;
+  }
+  .dim-m { background: #eaf3de; color: var(--green); }
+  .dim-i { background: var(--paper2); color: var(--gray); }
+  .dim-e { background: #fcebeb; color: var(--red); }
+
+  .historia-pie {
+    font-family: Arial, sans-serif;
+    font-size: 11px; color: #aaa;
+    margin-top: 1rem;
+    font-style: italic;
+  }
+
+  /* ── CAPITULAR ── */
+  .capitular::first-letter {
+    font-family: 'Playfair Display', serif;
+    font-size: 4.5em; font-weight: 600;
+    float: left; line-height: 0.7;
+    margin-right: 0.1em; margin-top: 0.12em;
+    color: var(--teal);
+  }
+
+  /* ── CTA ── */
+  .cta-wrap {
+    padding: 0 2rem 3rem;
+    max-width: 960px; margin: 0 auto;
+  }
+  .cta-card {
+    background: var(--ink);
+    border-radius: 16px;
+    padding: 2rem 2.5rem;
+    display: flex; align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem; flex-wrap: wrap;
+  }
+  .cta-card p {
+    font-family: 'Lora', serif;
+    font-size: 15px; color: #c9b89a;
+    line-height: 1.7; flex: 1;
+  }
+  .cta-card strong { color: #f0ece4; }
+  .cta-btn {
+    display: inline-block;
+    background: var(--teal); color: #fff;
+    font-family: Arial, sans-serif;
+    font-size: 13px; font-weight: 600;
+    padding: 12px 24px; border-radius: 99px;
+    text-decoration: none; white-space: nowrap;
+    transition: background 0.2s;
+  }
+  .cta-btn:hover { background: #005f63; }
+
+  /* ── VOCES DEL FORMULARIO ── */
+  .voces-grid {
+    max-width: 700px; margin: 0 auto;
+    padding: 0 2rem 4rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 1rem;
+  }
+  .voz-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    display: flex; flex-direction: column; gap: 0.75rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .voz-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+  }
+  .voz-nombre {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px; color: var(--ink);
+  }
+  .voz-lugar {
+    font-family: Arial, sans-serif;
+    font-size: 11px; color: var(--gray);
+    margin-top: -4px;
+  }
+  .voz-dims { display: flex; gap: 6px; flex-wrap: wrap; }
+  .voz-cita {
+    font-size: 13px; line-height: 1.7;
+    color: #5a4f48; font-style: italic;
+    border-left: 2px solid var(--border);
+    padding-left: 0.75rem;
+    flex: 1;
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    background: var(--paper2);
+    border-top: 1px solid var(--border);
+    padding: 2rem;
+    text-align: center;
+    font-family: Arial, sans-serif;
+    font-size: 11px; color: #aaa;
+    line-height: 1.8;
+  }
+
+  @media (max-width: 600px) {
+    .historia { padding: 2.5rem 1.25rem; }
+    .voces-grid { grid-template-columns: 1fr; padding: 0 1.25rem 3rem; }
+    .cta-wrap { padding: 0 1.25rem 2.5rem; }
+    .sep-line { padding: 2rem 1.25rem 0; }
+    .cta-card { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<!-- BANNER -->
+<div style="width:100%; position:relative; overflow:hidden; max-height:280px;">
+  <img src="https://sanluc2-maker.github.io/explorador_carencias/banner_historias.png" 
+       alt="Historias — Mapa crítico" 
+       style="width:100%; object-fit:cover; object-position:center 30%; display:block;">
+</div>
+
+<!-- INTRO -->
+<div style="max-width:960px;margin:0 auto;padding:2.5rem 2rem 0;">
+  <div style="font-family:Arial,sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--teal);margin-bottom:1rem;">Mapa crítico · Humanidades Digitales · ITESM 2026</div>
+  <h1 style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(24px,4vw,36px);font-weight:400;color:var(--dark);margin-bottom:0.75rem;">Historias que los <em style="font-style:italic;color:var(--teal);">datos no capturan</em></h1>
+  <p style="font-family:'Lora',serif;font-size:15px;color:#666;line-height:1.7;max-width:700px;">La Pensión para el Bienestar se vive en la vida cotidiana de millones de personas. Estas son algunas de sus voces — recogidas en entrevistas presenciales y a través de este sitio.</p>
+</div>
+
+<!-- SECCIÓN ESTELAR -->
+<div class="sep-line">
+  <span>Voces recogidas en el Hub Tecnológico de Monterrey</span>
+</div>
+<div class="wrapper">
+
+  <!-- Historia I: Juanita -->
+  <div class="historia">
+    <div class="historia-numero">I</div>
+    <div class="historia-meta">Juanita Treviño Álvarez · 65 años · Nuevo León</div>
+    <blockquote class="historia-frase">"A mí me gusta ayudar a la gente, por eso yo la regalo."</blockquote>
+    <p class="historia-texto capitular">
+      Juanita es viuda y tiene otra pensión, así que la Pensión Bienestar no la necesita para sobrevivir. La usa diferente: la da. La reparte entre quien la necesita más cerca.
+    </p>
+    <p class="historia-texto">
+      Pero cuando habla de su mamá, que aún vive, la historia cambia de tono. El médico de la colonia receta puro medicamento caro. La pensión es lo que cubre esa brecha. También es lo que permite comprarse unos tenis cuando se antoja, o un churro en la tarde.
+    </p>
+    <p class="historia-texto">
+      Y algo más concreto: seguridad crediticia. <em>"Sé que voy a tener con qué pagar"</em>, dice. Para Juanita, la pensión no es un ingreso — es una red.
+    </p>
+    <div class="historia-dims">
+      <span class="dim dim-m">🍽️ Alimentación mejoró</span>
+      <span class="dim dim-m">🏥 Salud mejoró</span>
+      <span class="dim dim-m">🏠 Vivienda mejoró</span>
+    </div>
+    <div class="historia-pie">Entrevista presencial · Hub Tec Monterrey · 2026</div>
+  </div>
+
+  <!-- Historia II: Cynthia -->
+  <div class="historia">
+    <div class="historia-numero">II</div>
+    <div class="historia-meta">Cynthia Vallejo · 27 años · Nuevo León · habla por su abuelo de 80</div>
+    <blockquote class="historia-frase">"Antes tenía que salir a trabajar todos los días para poder comer. Ahora ya no."</blockquote>
+    <p class="historia-texto capitular">
+      Cynthia no tiene 65 años pero conoce la historia mejor que nadie: la vive desde adentro. Su abuelo tiene 80 años. Antes de recibir la pensión, salía a trabajar todos los días — a los 80 años, bajo el sol de Monterrey.
+    </p>
+    <p class="historia-texto">
+      Un día le dio un golpe de calor. Pudo atenderse porque tenía el dinero de la pensión guardado. Eso fue lo que lo salvó. Hoy ya no trabaja. Come. Descansa.
+    </p>
+    <p class="historia-texto">
+      Pero Cynthia señala lo que falta: su abuelo no tiene IMSS. La pensión llegó a la mesa, pero la sala de espera del médico sigue vacía.
+    </p>
+    <div class="historia-dims">
+      <span class="dim dim-m">🍽️ Alimentación mejoró</span>
+      <span class="dim dim-e">🏥 Salud no mejoró</span>
+      <span class="dim dim-m">🏠 Vivienda mejoró</span>
+    </div>
+    <div class="historia-pie">Entrevista presencial · Hub Tec Monterrey · 2026</div>
+  </div>
+
+  <!-- Historia III: Martha -->
+  <div class="historia">
+    <div class="historia-numero">III</div>
+    <div class="historia-meta">Martha Alicia · Nuevo León · habla por sus papás</div>
+    <blockquote class="historia-frase">"Mis papás están solos."</blockquote>
+    <p class="historia-texto capitular">
+      Martha no recibe la pensión — no quiso formarse. Pero sus papás sí. Ella dice que ha mejorado en comida y en pagar servicios.
+    </p>
+    <p class="historia-texto">
+      No da más detalles. A veces las historias más cortas dicen lo más importante: hay dos personas mayores, están solas, y la pensión es parte de lo poco que tienen.
+    </p>
+    <div class="historia-dims">
+      <span class="dim dim-m">🍽️ Alimentación mejoró</span>
+      <span class="dim dim-i">🏥 Salud igual</span>
+      <span class="dim dim-m">🏠 Vivienda mejoró</span>
+    </div>
+    <div class="historia-pie">Entrevista presencial · Hub Tec Monterrey · 2026</div>
+  </div>
+
+</div>
+
+<!-- VOCES DEL FORMULARIO -->
+<div class="sep-line">
+  <span>Voces desde el formulario ciudadano</span>
+</div>
+<div class="sep">· · ·</div>
+
+<style>
+.carrusel-outer {
+  overflow: hidden;
+  padding: 1rem 0 2rem;
+  position: relative;
+}
+.carrusel-outer::before,
+.carrusel-outer::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 80px;
+  z-index: 2;
+  pointer-events: none;
+}
+.carrusel-outer::before { left: 0; background: linear-gradient(to right, #ffffff, transparent); }
+.carrusel-outer::after  { right: 0; background: linear-gradient(to left, #ffffff, transparent); }
+
+.carrusel-track {
+  display: flex;
+  gap: 1.25rem;
+  width: max-content;
+  animation: scroll-left 40s linear infinite;
+}
+.carrusel-track:hover { animation-play-state: paused; }
+
+@keyframes scroll-left {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.voz-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 280px;
+  flex-shrink: 0;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.voz-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+}
+.voz-nombre {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px; color: var(--ink);
+}
+.voz-lugar {
+  font-family: Arial, sans-serif;
+  font-size: 11px; color: var(--gray);
+  margin-top: -4px;
+}
+.voz-dims { display: flex; gap: 6px; flex-wrap: wrap; }
+.voz-cita {
+  font-size: 13px; line-height: 1.7;
+  color: #5a4f48; font-style: italic;
+  border-left: 2px solid var(--border);
+  padding-left: 0.75rem;
+  flex: 1;
+}
+</style>
+
+<div class="carrusel-outer">
+  <div class="carrusel-track" id="carrusel">
+
+    <div class="voz-card">
+      <div class="voz-nombre">Don Ernesto</div>
+      <div class="voz-lugar">Aguascalientes · 65 años</div>
+      <div class="voz-dims">
+        <span class="dim dim-m" style="font-size:11px;">🍽️ Mejoró</span>
+        <span class="dim dim-m" style="font-size:11px;">🏥 Mejoró</span>
+        <span class="dim dim-i" style="font-size:11px;">🏠 Igual</span>
+      </div>
+    </div>
+
+    <div class="voz-card">
+      <div class="voz-nombre">Doña Carmen</div>
+      <div class="voz-lugar">Nuevo León · 65 años</div>
+      <div class="voz-dims">
+        <span class="dim dim-m" style="font-size:11px;">🍽️ Mejoró</span>
+        <span class="dim dim-e" style="font-size:11px;">🏥 No mejoró</span>
+        <span class="dim dim-m" style="font-size:11px;">🏠 Mejoró</span>
+      </div>
+      <div class="voz-cita">"Todo suma y muchas gracias."</div>
+    </div>
+
+    <div class="voz-card">
+      <div class="voz-nombre">Don Rogelio</div>
+      <div class="voz-lugar">Nuevo León · 68 años</div>
+      <div class="voz-dims">
+        <span class="dim dim-i" style="font-size:11px;">🍽️ Igual</span>
+        <span class="dim dim-e" style="font-size:11px;">🏥 No mejoró</span>
+        <span class="dim dim-e" style="font-size:11px;">🏠 No mejoró</span>
+      </div>
+      <div class="voz-cita">"Es una ayuda que se agradece."</div>
+    </div>
+
+    <div class="voz-card">
+      <div class="voz-nombre">Doña Esperanza</div>
+      <div class="voz-lugar">Nuevo León · 66 años</div>
+      <div class="voz-dims">
+        <span class="dim dim-i" style="font-size:11px;">🍽️ Igual</span>
+        <span class="dim dim-m" style="font-size:11px;">🏥 Mejoró</span>
+        <span class="dim dim-i" style="font-size:11px;">🏠 Igual</span>
+      </div>
+      <div class="voz-cita">"Gracias."</div>
+    </div>
+
+    <div class="voz-card">
+      <div class="voz-nombre">Don Aurelio</div>
+      <div class="voz-lugar">Coahuila · 67 años</div>
+      <div class="voz-dims">
+        <span class="dim dim-m" style="font-size:11px;">🍽️ Mejoró</span>
+        <span class="dim dim-e" style="font-size:11px;">🏥 No mejoró</span>
+        <span class="dim dim-m" style="font-size:11px;">🏠 Mejoró</span>
+      </div>
+      <div class="voz-cita">"Muchas gracias."</div>
+    </div>
+
+    <div class="voz-card">
+      <div class="voz-nombre">Doña Guadalupe</div>
+      <div class="voz-lugar">Yucatán · 73 años</div>
+      <div class="voz-dims">
+        <span class="dim dim-m" style="font-size:11px;">🍽️ Mejoró</span>
+        <span class="dim dim-e" style="font-size:11px;">🏥 No mejoró</span>
+        <span class="dim dim-m" style="font-size:11px;">🏠 Mejoró</span>
+      </div>
+      <div class="voz-cita">"Que la mantenga, no la vayan a suspender."</div>
+    </div>
+
+    <div class="voz-card">
+      <div class="voz-nombre">Doña Consuelo</div>
+      <div class="voz-lugar">Coahuila · 65 años</div>
+      <div class="voz-dims">
+        <span class="dim dim-m" style="font-size:11px;">🍽️ Mejoró</span>
+        <span class="dim dim-m" style="font-size:11px;">🏥 Mejoró</span>
+        <span class="dim dim-m" style="font-size:11px;">🏠 Mejoró</span>
+      </div>
+      <div class="voz-cita">"Mil gracias, cambiaste mi vida."</div>
+    </div>
+
+    <div class="voz-card">
+      <div class="voz-nombre">Don Jacinto</div>
+      <div class="voz-lugar">Tabasco · 72 años</div>
+      <div class="voz-dims">
+        <span class="dim dim-m" style="font-size:11px;">🍽️ Mejoró</span>
+        <span class="dim dim-m" style="font-size:11px;">🏥 Mejoró</span>
+        <span class="dim dim-m" style="font-size:11px;">🏠 Mejoró</span>
+      </div>
+      <div class="voz-cita">"Gracias a eso hemos resuelto algunas cosas de las cuales disfrutamos hoy."</div>
+    </div>
+
+    <div class="voz-card">
+      <div class="voz-nombre">Doña Refugio</div>
+      <div class="voz-lugar">Tabasco · 79 años</div>
+      <div class="voz-dims">
+        <span class="dim dim-m" style="font-size:11px;">🍽️ Mejoró</span>
+        <span class="dim dim-e" style="font-size:11px;">🏥 No mejoró</span>
+        <span class="dim dim-m" style="font-size:11px;">🏠 Mejoró</span>
+      </div>
+      <div class="voz-cita">"Es un buen apoyo, hemos resuelto algunas emergencias."</div>
+    </div>
+
+    <div class="voz-card">
+      <div class="voz-nombre">Don Leopoldo</div>
+      <div class="voz-lugar">Baja California · 71 años</div>
+      <div class="voz-dims">
+        <span class="dim dim-m" style="font-size:11px;">🍽️ Mejoró</span>
+        <span class="dim dim-i" style="font-size:11px;">🏥 Igual</span>
+        <span class="dim dim-e" style="font-size:11px;">🏠 No mejoró</span>
+      </div>
+      <div class="voz-cita">"Gracias por el apoyo a los adultos mayores."</div>
+    </div>
+
+    <div class="voz-card">
+      <div class="voz-nombre">Don Félix</div>
+      <div class="voz-lugar">Tabasco · 79 años</div>
+      <div class="voz-dims">
+        <span class="dim dim-m" style="font-size:11px;">🍽️ Mejoró</span>
+        <span class="dim dim-e" style="font-size:11px;">🏥 No mejoró</span>
+        <span class="dim dim-m" style="font-size:11px;">🏠 Mejoró</span>
+      </div>
+      <div class="voz-cita">"Gracias por el apoyo que nos brinda."</div>
+    </div>
+
+    <!-- Duplicado para loop infinito -->
+    <div class="voz-card">
+      <div class="voz-nombre">Don Ernesto</div>
+      <div class="voz-lugar">Aguascalientes · 65 años</div>
+      <div class="voz-dims">
+        <span class="dim dim-m" style="font-size:11px;">🍽️ Mejoró</span>
+        <span class="dim dim-m" style="font-size:11px;">🏥 Mejoró</span>
+        <span class="dim dim-i" style="font-size:11px;">🏠 Igual</span>
+      </div>
+    </div>
+    <div class="voz-card">
+      <div class="voz-nombre">Doña Carmen</div>
+      <div class="voz-lugar">Nuevo León · 65 años</div>
+      <div class="voz-dims">
+        <span class="dim dim-m" style="font-size:11px;">🍽️ Mejoró</span>
+        <span class="dim dim-e" style="font-size:11px;">🏥 No mejoró</span>
+        <span class="dim dim-m" style="font-size:11px;">🏠 Mejoró</span>
+      </div>
+      <div class="voz-cita">"Todo suma y muchas gracias."</div>
+    </div>
+    <div class="voz-card">
+      <div class="voz-nombre">Don Rogelio</div>
+      <div class="voz-lugar">Nuevo León · 68 años</div>
+      <div class="voz-dims">
+        <span class="dim dim-i" style="font-size:11px;">🍽️ Igual</span>
+        <span class="dim dim-e" style="font-size:11px;">🏥 No mejoró</span>
+        <span class="dim dim-e" style="font-size:11px;">🏠 No mejoró</span>
+      </div>
+      <div class="voz-cita">"Es una ayuda que se agradece."</div>
+    </div>
+    <div class="voz-card">
+      <div class="voz-nombre">Doña Consuelo</div>
+      <div class="voz-lugar">Coahuila · 65 años</div>
+      <div class="voz-dims">
+        <span class="dim dim-m" style="font-size:11px;">🍽️ Mejoró</span>
+        <span class="dim dim-m" style="font-size:11px;">🏥 Mejoró</span>
+        <span class="dim dim-m" style="font-size:11px;">🏠 Mejoró</span>
+      </div>
+      <div class="voz-cita">"Mil gracias, cambiaste mi vida."</div>
+    </div>
+    <div class="voz-card">
+      <div class="voz-nombre">Don Jacinto</div>
+      <div class="voz-lugar">Tabasco · 72 años</div>
+      <div class="voz-dims">
+        <span class="dim dim-m" style="font-size:11px;">🍽️ Mejoró</span>
+        <span class="dim dim-m" style="font-size:11px;">🏥 Mejoró</span>
+        <span class="dim dim-m" style="font-size:11px;">🏠 Mejoró</span>
+      </div>
+      <div class="voz-cita">"Gracias a eso hemos resuelto algunas cosas de las cuales disfrutamos hoy."</div>
+    </div>
+    <div class="voz-card">
+      <div class="voz-nombre">Doña Guadalupe</div>
+      <div class="voz-lugar">Yucatán · 73 años</div>
+      <div class="voz-dims">
+        <span class="dim dim-m" style="font-size:11px;">🍽️ Mejoró</span>
+        <span class="dim dim-e" style="font-size:11px;">🏥 No mejoró</span>
+        <span class="dim dim-m" style="font-size:11px;">🏠 Mejoró</span>
+      </div>
+      <div class="voz-cita">"Que la mantenga, no la vayan a suspender."</div>
+    </div>
+
+  </div>
+</div>
+
+<div class="cta-wrap" style="padding-top:2rem;">
+  <div class="cta-card">
+    <p>¿Eres mayor de 65 años y recibes la Pensión para el Bienestar? <strong>Tu historia también importa.</strong> Comparte tu experiencia y aparecerá en el mapa.</p>
+    <a class="cta-btn" href="https://tally.so/r/81AY1x" target="_blank">Compartir mi historia →</a>
+  </div>
+</div>
+
+<div class="footer">
+  Historias recopiladas mediante entrevistas presenciales en el Hub Tecnológico de Monterrey y formulario ciudadano en línea<br>
+  Los nombres del formulario son ficticios para proteger la identidad de los participantes<br>
+  Proyecto académico · Sandra Lucía Martínez Flores · A01794929 · ITESM 2026
+</div>
+
+</body>
+</html>
