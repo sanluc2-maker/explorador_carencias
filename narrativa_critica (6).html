@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resultados — Mapa crítico</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --teal:#007B7F;
+  --green:#3B6D11;
+  --red:#A32D2D;
+  --green-b:#4CAF50;
+  --red-b:#E24B4A;
+  --yellow:#F59E0B;
+  --dark:#1a1a1a;
+  --white:#ffffff;
+}
+
+html,body{height:100%;overflow:hidden}
+body{font-family:'Inter',sans-serif;background:#0d0d0d;color:#f0ece4}
+
+/* PROGRESS */
+#progress{position:fixed;top:0;left:0;height:3px;background:var(--teal);z-index:999;transition:width 0.2s linear;width:0%}
+
+/* NAV DOTS */
+#nav-dots{
+  position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);
+  display:flex;gap:10px;z-index:99;
+}
+.dot{
+  width:8px;height:8px;border-radius:50%;
+  background:rgba(255,255,255,0.3);
+  cursor:pointer;transition:all 0.3s;
+  border:none;
+}
+.dot.active{background:#fff;transform:scale(1.3)}
+
+/* ARROWS */
+.arrow{
+  position:fixed;top:50%;transform:translateY(-50%);
+  background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);
+  color:#fff;width:48px;height:48px;border-radius:50%;
+  font-size:20px;cursor:pointer;z-index:99;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.3s;backdrop-filter:blur(4px);
+}
+.arrow:hover{background:rgba(255,255,255,0.2)}
+#prev-btn{left:1.5rem}
+#next-btn{right:1.5rem}
+.arrow:disabled{opacity:0.2;cursor:default}
+
+/* SLIDES CONTAINER */
+#slides{
+  display:flex;
+  height:100vh;
+  transition:transform 0.8s cubic-bezier(0.77,0,0.175,1);
+}
+
+/* SLIDE BASE */
+.slide{
+  min-width:100vw;height:100vh;
+  display:flex;flex-direction:column;
+  justify-content:center;align-items:center;
+  padding:3rem 4rem;
+  position:relative;overflow:hidden;
+}
+
+/* ANIMATED ELEMENTS */
+.anim{
+  opacity:0;transform:translateY(40px);
+  transition:opacity 0.7s ease,transform 0.7s ease;
+}
+.anim.from-left{transform:translateX(-60px)}
+.anim.from-right{transform:translateX(60px)}
+.slide.active .anim{opacity:1;transform:translate(0,0)}
+.slide.active .anim:nth-child(2){transition-delay:0.15s}
+.slide.active .anim:nth-child(3){transition-delay:0.3s}
+.slide.active .anim:nth-child(4){transition-delay:0.45s}
+.slide.active .anim:nth-child(5){transition-delay:0.6s}
+
+/* LABEL */
+.slide-label{
+  font-family:'Inter',sans-serif;
+  font-size:11px;letter-spacing:3px;text-transform:uppercase;
+  color:rgba(255,255,255,0.5);margin-bottom:1.5rem;
+}
+
+/* TYPOGRAPHY */
+.apertura{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(28px,4vw,52px);
+  font-weight:400;line-height:1.25;
+  max-width:800px;text-align:center;
+}
+.apertura em{font-style:italic;color:#c9b89a}
+
+h2.slide-title{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(22px,3.5vw,40px);
+  font-weight:400;line-height:1.3;
+  max-width:700px;text-align:center;
+  margin-bottom:1.5rem;
+}
+
+.slide-body{
+  font-size:clamp(14px,1.8vw,18px);
+  line-height:1.8;color:rgba(255,255,255,0.75);
+  max-width:620px;text-align:center;
+  margin-bottom:1.5rem;
+}
+
+/* QUOTE */
+.quote-wrap{
+  border-left:3px solid var(--teal);
+  padding:1rem 1.5rem;
+  max-width:580px;
+  background:rgba(255,255,255,0.05);
+  border-radius:0 12px 12px 0;
+  text-align:left;
+}
+.quote-text{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(15px,2vw,20px);
+  font-style:italic;
+  color:#f0ece4;line-height:1.6;
+  margin-bottom:0.5rem;
+}
+.quote-author{
+  font-size:12px;color:var(--teal);
+  letter-spacing:0.5px;font-family:'Inter',sans-serif;
+}
+
+/* STATS ROW */
+.stats-row{
+  display:flex;gap:1.5rem;flex-wrap:wrap;
+  justify-content:center;margin:1.5rem 0;
+}
+.stat-card{
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.15);
+  border-radius:16px;padding:1.5rem 2rem;
+  text-align:center;min-width:160px;
+}
+.stat-arrow{font-size:24px;margin-bottom:0.4rem}
+.stat-val{
+  font-family:'Inter',sans-serif;
+  font-size:32px;font-weight:600;
+  margin-bottom:0.25rem;
+}
+.stat-lbl{font-size:12px;color:rgba(255,255,255,0.5);letter-spacing:0.5px}
+.stat-sig{font-size:10px;color:rgba(255,255,255,0.3);margin-top:4px}
+
+/* DIMS */
+.dims-row{
+  display:flex;gap:1rem;flex-wrap:wrap;
+  justify-content:center;margin-top:1.5rem;
+}
+.dim-chip{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 16px;border-radius:99px;
+  font-family:'Inter',sans-serif;font-size:13px;
+  border:1px solid rgba(255,255,255,0.15);
+}
+.dim-chip.g{background:rgba(76,175,80,0.15);color:#81C784;border-color:rgba(76,175,80,0.3)}
+.dim-chip.r{background:rgba(226,75,74,0.15);color:#EF9A9A;border-color:rgba(226,75,74,0.3)}
+.dim-chip.n{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5)}
+
+/* PARADOX VISUAL */
+.paradox{
+  display:flex;align-items:center;gap:2rem;
+  margin:2rem 0;flex-wrap:wrap;justify-content:center;
+}
+.paradox-card{
+  border-radius:16px;padding:1.5rem 2rem;
+  text-align:center;min-width:180px;
+}
+.paradox-card.up{background:rgba(226,75,74,0.15);border:1px solid rgba(226,75,74,0.3)}
+.paradox-card.down{background:rgba(76,175,80,0.15);border:1px solid rgba(76,175,80,0.3)}
+.paradox-icon{font-size:36px;margin-bottom:0.5rem}
+.paradox-val{font-size:28px;font-weight:600;font-family:'Inter',sans-serif}
+.paradox-lbl{font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px}
+.paradox-vs{
+  font-family:'Playfair Display',serif;
+  font-size:28px;color:rgba(255,255,255,0.3);
+}
+
+/* FORCE BARS */
+.force-bars{max-width:560px;width:100%;margin:1.5rem 0}
+.force-row{margin-bottom:1.25rem}
+.force-lbl{
+  display:flex;justify-content:space-between;
+  font-family:'Inter',sans-serif;font-size:13px;
+  color:rgba(255,255,255,0.6);margin-bottom:6px;
+}
+.force-track{height:12px;background:rgba(255,255,255,0.1);border-radius:99px;overflow:hidden}
+.force-fill{height:100%;border-radius:99px;width:0%;transition:width 1.4s cubic-bezier(0.4,0,0.2,1)}
+
+/* ANSWER CARDS */
+.answers{display:flex;flex-direction:column;gap:0.875rem;max-width:600px;width:100%}
+.answer-card{
+  border-radius:14px;padding:1.25rem 1.5rem;
+  border:1px solid rgba(255,255,255,0.1);
+  display:flex;align-items:flex-start;gap:1rem;
+}
+.answer-card.g{background:rgba(76,175,80,0.12);border-color:rgba(76,175,80,0.25)}
+.answer-card.r{background:rgba(226,75,74,0.12);border-color:rgba(226,75,74,0.25)}
+.answer-card.y{background:rgba(245,158,11,0.12);border-color:rgba(245,158,11,0.25)}
+.answer-icon{font-size:28px;flex-shrink:0}
+.answer-dim{font-size:11px;letter-spacing:1px;text-transform:uppercase;font-family:'Inter',sans-serif;margin-bottom:4px;font-weight:600}
+.answer-verdict{font-size:17px;font-weight:500;font-family:'Inter',sans-serif}
+.answer-desc{font-size:13px;color:rgba(255,255,255,0.55);margin-top:4px;line-height:1.5}
+
+/* CIERRE */
+.cierre{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(18px,2.8vw,30px);
+  font-style:italic;line-height:1.55;
+  max-width:620px;text-align:center;
+  color:#c9b89a;
+  border-top:1px solid rgba(255,255,255,0.1);
+  padding-top:2rem;margin-top:2rem;
+}
+
+/* SLIDE BACKGROUNDS */
+#s0{background:#0d0d0d}
+#s1{background:linear-gradient(135deg,#0d1a1a 0%,#0a1a2e 100%)}
+#s2{background:linear-gradient(135deg,#0d1a0d 0%,#0a150a 100%)}
+#s3{background:linear-gradient(135deg,#1a0d0d 0%,#2a0a0a 100%)}
+#s4{background:linear-gradient(135deg,#1a1400 0%,#0d0d0d 100%)}
+#s5{background:linear-gradient(135deg,#0d0d1a 0%,#0a0a2e 100%)}
+#s6{background:#0d0d0d}
+
+/* TIMELINE SVG */
+.timeline-wrap{
+  background:rgba(255,255,255,0.05);
+  border-radius:16px;padding:1.25rem;
+  max-width:680px;width:100%;
+  border:1px solid rgba(255,255,255,0.1);
+}
+.timeline-title{
+  font-family:'Inter',sans-serif;
+  font-size:11px;color:rgba(255,255,255,0.4);
+  margin-bottom:0.75rem;letter-spacing:1px;
+  text-transform:uppercase;
+}
+#svgTimeline{width:100%;height:160px}
+
+/* MOBILE */
+@media(max-width:600px){
+  .slide{padding:2rem 1.5rem}
+  .paradox{flex-direction:column;gap:1rem}
+  .stats-row{gap:1rem}
+  .arrow{width:38px;height:38px;font-size:16px}
+}
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<div id="nav-dots">
+  <button class="dot active" onclick="goTo(0)"></button>
+  <button class="dot" onclick="goTo(1)"></button>
+  <button class="dot" onclick="goTo(2)"></button>
+  <button class="dot" onclick="goTo(3)"></button>
+  <button class="dot" onclick="goTo(4)"></button>
+  <button class="dot" onclick="goTo(5)"></button>
+  <button class="dot" onclick="goTo(6)"></button>
+</div>
+
+<button class="arrow" id="prev-btn" onclick="prev()" disabled>‹</button>
+<button class="arrow" id="next-btn" onclick="next()">›</button>
+
+<div id="slides">
+
+  <!-- S0: PORTADA -->
+  <div class="slide" id="s0">
+    <div class="anim slide-label">Resultados</div>
+    <div class="anim apertura">
+      "Los efectos de la Pensión para el Bienestar<br>en las personas mayores<br><em>no pasaron desapercibidos.</em>"
+    </div>
+    <div class="anim slide-body" style="margin-top:2rem;">
+      Una lectura construida con microdatos del ENIGH 2016–2024,<br>
+      análisis de sentimiento en YouTube e historias directas de personas mayores.
+    </div>
+    <div class="anim" style="margin-top:2.5rem;font-family:'Inter',sans-serif;font-size:13px;color:rgba(255,255,255,0.35);letter-spacing:2px;">
+      DESLIZA →
+    </div>
+  </div>
+
+  <!-- S1: EL PICO -->
+  <div class="slide" id="s1">
+    <div class="anim slide-label">Lo que dijo la gente · Análisis de redes sociales</div>
+    <h2 class="anim slide-title">2022: un primer pico.<br>La tendencia no fue lineal.</h2>
+    <div class="anim slide-body">
+      El análisis cubre comentarios de YouTube de toda la población sobre la Pensión para el Bienestar entre 2019 y 2026.
+      En 2022, <strong style="color:#fff">el 69% de los comentarios eran positivos</strong> — primer pico de aprobación.
+      En 2023 cayó bruscamente a 38%. En 2024 subió al 79% — el máximo de toda la serie —
+      asociado al inicio del gobierno de Sheinbaum. La tendencia no fue lineal ni sostenida.
+    </div>
+    <div class="anim timeline-wrap">
+      <div class="timeline-title">% COMENTARIOS POSITIVOS EN REDES · 2019–2026 · TODA LA POBLACIÓN</div>
+      <svg id="svgTimeline" viewBox="0 0 680 160" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#007B7F" stop-opacity="0.25"/>
+            <stop offset="100%" stop-color="#007B7F" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <line x1="55" y1="15" x2="665" y2="15" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+        <line x1="55" y1="50" x2="665" y2="50" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+        <line x1="55" y1="90" x2="665" y2="90" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+        <line x1="55" y1="130" x2="665" y2="130" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+        <text x="48" y="18" font-family="Inter" font-size="9" fill="rgba(255,255,255,0.3)" text-anchor="end">80%</text>
+        <text x="48" y="53" font-family="Inter" font-size="9" fill="rgba(255,255,255,0.3)" text-anchor="end">60%</text>
+        <text x="48" y="93" font-family="Inter" font-size="9" fill="rgba(255,255,255,0.3)" text-anchor="end">40%</text>
+        <text x="48" y="133" font-family="Inter" font-size="9" fill="rgba(255,255,255,0.3)" text-anchor="end">20%</text>
+        <path id="svgArea" d="" fill="url(#ag)" opacity="0"/>
+        <path id="svgLine" d="" fill="none" stroke="#007B7F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <g id="svgDots"></g>
+        <g id="svgLabels"></g>
+        <line id="mk22" x1="0" y1="12" x2="0" y2="145" stroke="#F59E0B" stroke-width="1.5" stroke-dasharray="4,3" opacity="0"/>
+        <text id="mk22t" x="0" y="10" font-family="Inter" font-size="9" fill="#F59E0B" text-anchor="middle" opacity="0">Pico 2022</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- S2: LA COMIDA MEJORÓ -->
+  <div class="slide" id="s2">
+    <div class="anim slide-label">Lo que miden los datos · Alimentación</div>
+    <h2 class="anim slide-title">Los números lo confirman:<br>la comida mejoró</h2>
+    <div class="anim slide-body">
+      Comparando personas de 65+ años con un grupo similar de 60–64 años,
+      antes y después de 2022, los datos muestran un cambio real y medible.
+    </div>
+    <div class="anim stats-row">
+      <div class="stat-card">
+        <div class="stat-arrow" style="color:var(--green-b)">↓</div>
+        <div class="stat-val" style="color:var(--green-b)">
+          <span class="counter" data-target="2.9" data-prefix="−" data-suffix=" pp">−0 pp</span>
+        </div>
+        <div class="stat-lbl">Carencia alimentaria</div>
+        <div class="stat-sig">Resultado muy sólido</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-arrow" style="color:var(--green-b)">↓</div>
+        <div class="stat-val" style="color:var(--green-b)">
+          <span class="counter" data-target="0.5" data-prefix="−" data-suffix=" pp">−0 pp</span>
+        </div>
+        <div class="stat-lbl">Carencia de vivienda</div>
+        <div class="stat-sig">Resultado significativo</div>
+      </div>
+    </div>
+    <div class="anim quote-wrap">
+      <div class="quote-text">"Desde que recibo la pensión ya no tengo que trabajar para poder comer. A mis 80 años eso vale mucho."</div>
+      <div class="quote-author">— Juan R. · 80 años · Nuevo León · Entrevista presencial, Hub Tec Monterrey</div>
+    </div>
+    <div class="anim dims-row">
+      <span class="dim-chip g">🍽️ Alimentación mejoró</span>
+      <span class="dim-chip g">🏠 Vivienda mejoró</span>
+    </div>
+  </div>
+
+  <!-- S3: PERO LA SALUD -->
+  <div class="slide" id="s3">
+    <div class="anim slide-label">Lo que miden los datos · Salud</div>
+    <h2 class="anim slide-title">Pero hay otro número.<br>En dirección contraria.</h2>
+    <div class="anim paradox">
+      <div class="paradox-card down">
+        <div class="paradox-icon">🍽️</div>
+        <div class="paradox-val" style="color:var(--green-b)">
+          <span class="counter" data-target="2.9" data-prefix="−" data-suffix=" pp">0</span>
+        </div>
+        <div class="paradox-lbl">Alimentación</div>
+      </div>
+      <div class="paradox-vs">vs</div>
+      <div class="paradox-card up">
+        <div class="paradox-icon">🏥</div>
+        <div class="paradox-val" style="color:var(--red-b)">
+          <span class="counter" data-target="2.9" data-prefix="+" data-suffix=" pp">0</span>
+        </div>
+        <div class="paradox-lbl">Salud</div>
+      </div>
+    </div>
+    <div class="anim slide-body">
+      Mientras la pensión mejoró la seguridad alimentaria, más adultos mayores
+      quedaron sin acceso a servicios de salud — con la misma contundencia estadística.
+    </div>
+    <div class="anim quote-wrap" style="border-left-color:var(--red-b)">
+      <div class="quote-text">"Su abuelo no tiene acceso a servicios médicos. La pensión llegó a la mesa, pero la sala de espera del médico sigue vacía."</div>
+      <div class="quote-author">— Cynthia Vallejo · 27 años · Nuevo León · habla por su abuelo de 80 · Hub Tec Monterrey</div>
+    </div>
+    <div class="anim dims-row">
+      <span class="dim-chip g">🍽️ Alimentación ↓ mejoró</span>
+      <span class="dim-chip r">🏥 Salud ↑ empeoró</span>
+      <span class="dim-chip g">🏠 Vivienda ↓ mejoró</span>
+    </div>
+  </div>
+
+  <!-- S4: CERO NO ES NADA -->
+  <div class="slide" id="s4">
+    <div class="anim slide-label">Lo que los datos ocultan</div>
+    <h2 class="anim slide-title">Cero no significa<br>que nada cambió</h2>
+    <div class="anim slide-body">
+      Si sumas los tres efectos, el resultado neto es casi cero. Un titular podría decir
+      <em style="color:rgba(255,255,255,0.5)">"la pensión no cambió nada"</em> — y sería técnicamente correcto.
+      Pero mentiría por omisión.
+    </div>
+    <div class="anim force-bars" id="forceBars">
+      <div class="force-row">
+        <div class="force-lbl"><span>🍽️ Alimentación</span><span style="color:var(--green-b)">mejoró −2.9pp</span></div>
+        <div class="force-track"><div class="force-fill" data-w="58" style="background:var(--green-b)"></div></div>
+      </div>
+      <div class="force-row">
+        <div class="force-lbl"><span>🏠 Vivienda</span><span style="color:#81C784">mejoró −0.5pp</span></div>
+        <div class="force-track"><div class="force-fill" data-w="10" style="background:#81C784"></div></div>
+      </div>
+      <div class="force-row">
+        <div class="force-lbl"><span>🏥 Salud</span><span style="color:var(--red-b)">empeoró +2.9pp</span></div>
+        <div class="force-track"><div class="force-fill" data-w="58" style="background:var(--red-b)"></div></div>
+      </div>
+      <div class="force-row">
+        <div class="force-lbl" style="color:rgba(255,255,255,0.4)"><span>Índice total</span><span>≈ 0 (p=0.94)</span></div>
+        <div class="force-track"><div class="force-fill" data-w="3" style="background:rgba(255,255,255,0.3)"></div></div>
+      </div>
+    </div>
+    <div class="anim" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:1rem 1.5rem;max-width:560px;font-size:14px;line-height:1.6;color:rgba(255,255,255,0.75);">
+      💡 <strong style="color:#F59E0B">Dos fuerzas opuestas de igual magnitud</strong> se cancelaron entre sí. El promedio esconde la paradoja.
+    </div>
+  </div>
+
+  <!-- S5: CONFIANZA -->
+  <div class="slide" id="s5">
+    <div class="anim slide-label">Lo que las redes capturan · Toda la población</div>
+    <h2 class="anim slide-title">La confianza llegó a su pico en 2022.<br>Después cayó casi a la mitad.</h2>
+    <div class="anim force-bars">
+      <div class="force-row">
+        <div class="force-lbl"><span>Confianza en 2022 (pico)</span><span style="color:var(--teal)">1.87 pts</span></div>
+        <div class="force-track"><div class="force-fill" data-w="93" style="background:var(--teal)"></div></div>
+      </div>
+      <div class="force-row">
+        <div class="force-lbl"><span>Confianza post-2022</span><span style="color:var(--red-b)">0.98 pts (−47% vs pico 2022)</span></div>
+        <div class="force-track"><div class="force-fill" data-w="49" style="background:var(--red-b)"></div></div>
+      </div>
+    </div>
+    <div class="anim slide-body">
+      En 2022 — el año del aumento — la confianza llegó a su punto más alto: 1.87 pts.
+      Después cayó a 0.98. No fue el enojo la emoción que más cambió — fue la confianza.
+      Los datos de sentimiento sugieren que el tono de la conversación pública
+      pasó de la gratitud a la incertidumbre.
+    </div>
+    <div class="anim quote-wrap" style="border-left-color:var(--yellow)">
+      <div class="quote-text">"Antes vivía con miedo de quedarme sin nada. Ahora sé que cada dos meses algo llega. No es mucho, pero es seguro."</div>
+      <div class="quote-author">— María G. · 72 años · Oaxaca · Formulario ciudadano</div>
+    </div>
+  </div>
+
+  <!-- S6: RESPUESTA -->
+  <div class="slide" id="s6">
+    <div class="anim slide-label">La respuesta</div>
+    <h2 class="anim slide-title">¿Estuvo mejor el grupo<br>de 65+ después de 2022?</h2>
+    <div class="anim answers">
+      <div class="answer-card g">
+        <div class="answer-icon">🍽️</div>
+        <div>
+          <div class="answer-dim" style="color:var(--green-b)">Alimentación</div>
+          <div class="answer-verdict" style="color:var(--green-b)">Sí mejoró</div>
+          <div class="answer-desc">Los adultos mayores pudieron comer mejor que el grupo de 60–64 años. Resultado muy sólido.</div>
+        </div>
+      </div>
+      <div class="answer-card g">
+        <div class="answer-icon">🏠</div>
+        <div>
+          <div class="answer-dim" style="color:var(--green-b)">Vivienda</div>
+          <div class="answer-verdict" style="color:var(--green-b)">Mejoró ligeramente</div>
+          <div class="answer-desc">Hubo una mejora pequeña pero estadísticamente significativa en condiciones de vivienda (−0.5pp, p=0.037).</div>
+        </div>
+      </div>
+      <div class="answer-card r">
+        <div class="answer-icon">🏥</div>
+        <div>
+          <div class="answer-dim" style="color:var(--red-b)">Salud</div>
+          <div class="answer-verdict" style="color:var(--red-b)">No mejoró — empeoró</div>
+          <div class="answer-desc">Más adultos mayores quedaron sin acceso a servicios de salud. Misma contundencia estadística.</div>
+        </div>
+      </div>
+      <div class="answer-card y">
+        <div class="answer-icon">📱</div>
+        <div>
+          <div class="answer-dim" style="color:var(--yellow)">Confianza en el sistema</div>
+          <div class="answer-verdict" style="color:var(--yellow)">Cayó 47% desde el pico de 2022</div>
+          <div class="answer-desc">La confianza bajó de 1.87 (pico 2022) a 0.98 (post-2022) — una caída de 47% en el sentimiento público hacia el programa.</div>
+        </div>
+      </div>
+    </div>
+    <div class="anim cierre">
+      "Medir el bienestar es siempre incompleto.<br>Pero escuchar las voces de quienes lo viven<br>acerca un poco más a la verdad."
+    </div>
+  </div>
+
+</div><!-- /slides -->
+
+<script>
+let current = 0;
+const total = 7;
+const slidesEl = document.getElementById('slides');
+const dots = document.querySelectorAll('.dot');
+
+function goTo(n) {
+  const prev = current;
+  current = Math.max(0, Math.min(total - 1, n));
+  slidesEl.style.transform = `translateX(-${current * 100}vw)`;
+  document.getElementById('progress').style.width = ((current / (total - 1)) * 100) + '%';
+  dots.forEach((d, i) => d.classList.toggle('active', i === current));
+  document.getElementById('prev-btn').disabled = current === 0;
+  document.getElementById('next-btn').disabled = current === total - 1;
+
+  // Activate slide
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === current));
+
+  // Trigger specific animations
+  if (current === 1) setTimeout(drawTimeline, 500);
+  if (current === 2 || current === 3) triggerCounters();
+  if (current === 4) triggerBars('#forceBars');
+  if (current === 5) {
+    triggerBars(null);
+    document.querySelectorAll('#s5 .force-fill').forEach(b => {
+      setTimeout(() => { b.style.width = b.dataset.w + '%'; }, 400);
+    });
+  }
+}
+
+function next() { goTo(current + 1); }
+function prev() { goTo(current - 1); }
+
+// Keyboard
+window.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') next();
+  if (e.key === 'ArrowLeft') prev();
+});
+
+// Touch swipe
+let startX = 0;
+document.addEventListener('touchstart', e => { startX = e.touches[0].clientX; });
+document.addEventListener('touchend', e => {
+  const diff = startX - e.changedTouches[0].clientX;
+  if (Math.abs(diff) > 50) diff > 0 ? next() : prev();
+});
+
+// Init
+goTo(0);
+
+// COUNTER
+function triggerCounters() {
+  document.querySelectorAll('.slide.active .counter').forEach(el => {
+    if (el.dataset.done) return;
+    el.dataset.done = '1';
+    const target = parseFloat(el.dataset.target);
+    const prefix = el.dataset.prefix || '';
+    const suffix = el.dataset.suffix || '';
+    const start = performance.now();
+    (function step(now) {
+      const p = Math.min((now - start) / 1400, 1);
+      const ease = 1 - Math.pow(1 - p, 3);
+      el.textContent = prefix + (target * ease).toFixed(1) + suffix;
+      if (p < 1) requestAnimationFrame(step);
+    })(start);
+  });
+}
+
+// BARS
+function triggerBars(selector) {
+  const container = selector ? document.querySelector(selector) : document.querySelector('.slide.active');
+  if (!container) return;
+  container.querySelectorAll('.force-fill').forEach(b => {
+    setTimeout(() => { b.style.width = b.dataset.w + '%'; }, 300);
+  });
+}
+
+// TIMELINE
+function drawTimeline() {
+  const data = [
+    {y:'2019',pct:49},{y:'2020',pct:47},{y:'2021',pct:36},
+    {y:'2022',pct:69},{y:'2023',pct:38},{y:'2024',pct:79},
+    {y:'2025',pct:47},{y:'2026',pct:15}
+  ];
+  const W=680,H=160,pL=55,pR=20,pT=15,pB=30;
+  const w=W-pL-pR,h=H-pT-pB;
+  const xStep=w/(data.length-1);
+  const yS=v=>pT+h-(v/100)*h;
+  const pts=data.map((d,i)=>({x:pL+i*xStep,y:yS(d.pct),label:d.y,pct:d.pct,peak:d.y==='2022'}));
+  const dStr=pts.map((p,i)=>(i===0?`M${p.x},${p.y}`:`L${p.x},${p.y}`)).join(' ');
+  const aStr=`M${pts[0].x},${H-pB} `+pts.map(p=>`L${p.x},${p.y}`).join(' ')+` L${pts[pts.length-1].x},${H-pB}Z`;
+  const lp=document.getElementById('svgLine');
+  const ap=document.getElementById('svgArea');
+  lp.setAttribute('d',dStr);
+  ap.setAttribute('d',aStr);
+  const len=lp.getTotalLength?lp.getTotalLength():800;
+  lp.style.strokeDasharray=len;
+  lp.style.strokeDashoffset=len;
+  requestAnimationFrame(()=>{
+    lp.style.transition='stroke-dashoffset 2s ease';
+    lp.style.strokeDashoffset='0';
+    ap.style.transition='opacity 2s ease';
+    ap.style.opacity='1';
+  });
+  const dotsG=document.getElementById('svgDots');
+  const labG=document.getElementById('svgLabels');
+  pts.forEach((p,i)=>{
+    setTimeout(()=>{
+      const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      c.setAttribute('cx',p.x);c.setAttribute('cy',p.y);
+      c.setAttribute('r',p.peak?5:3.5);
+      c.setAttribute('fill',p.peak?'#F59E0B':'#007B7F');
+      c.setAttribute('stroke','rgba(0,0,0,0.5)');c.setAttribute('stroke-width','1.5');
+      dotsG.appendChild(c);
+      const vt=document.createElementNS('http://www.w3.org/2000/svg','text');
+      vt.setAttribute('x',p.x);vt.setAttribute('y',p.y-8);
+      vt.setAttribute('font-family','Inter');vt.setAttribute('font-size','9');
+      vt.setAttribute('fill',p.peak?'#F59E0B':'rgba(255,255,255,0.6)');
+      vt.setAttribute('text-anchor','middle');
+      vt.textContent=p.pct+'%';
+      dotsG.appendChild(vt);
+      const xt=document.createElementNS('http://www.w3.org/2000/svg','text');
+      xt.setAttribute('x',p.x);xt.setAttribute('y',H-pB+14);
+      xt.setAttribute('font-family','Inter');xt.setAttribute('font-size','9');
+      xt.setAttribute('fill','rgba(255,255,255,0.3)');xt.setAttribute('text-anchor','middle');
+      xt.textContent=p.label;
+      labG.appendChild(xt);
+    },1800+i*80);
+  });
+  const peak=pts[3];
+  setTimeout(()=>{
+    const mk=document.getElementById('mk22');
+    const ml=document.getElementById('mk22t');
+    mk.setAttribute('x1',peak.x);mk.setAttribute('x2',peak.x);
+    ml.setAttribute('x',peak.x);
+    mk.style.transition='opacity 0.5s';ml.style.transition='opacity 0.5s';
+    mk.style.opacity='1';ml.style.opacity='1';
+  },2500);
+}
+</script>
+</body>
+</html>
