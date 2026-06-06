@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resultados — Datos con Rostro</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --teal:#007B7F;--teal2:#00A3A8;--teal-light:#E8F5F5;
+  --dark:#1a1a1a;--mid:#f7f7f7;--border:#e5e5e5;
+  --gray:#666;--white:#ffffff;
+  --green:#3B8A3E;--red:#C0392B;--amber:#B7770D;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:#fff;color:var(--dark);line-height:1.7}
+.wrapper{max-width:860px;margin:0 auto;padding:0 1.5rem}
+
+/* HERO */
+.hero{padding:4rem 0 3rem;text-align:center;border-bottom:1px solid var(--border)}
+.hero-label{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--teal);margin-bottom:1rem}
+.hero-title{font-family:'Playfair Display',serif;font-size:clamp(28px,5vw,48px);font-weight:400;color:var(--dark);line-height:1.2;margin-bottom:1rem}
+.hero-title em{color:var(--teal);font-style:italic}
+.hero-sub{font-size:15px;color:var(--gray);max-width:600px;margin:0 auto 2rem;line-height:1.75}
+.hero-answer{font-family:'Playfair Display',serif;font-size:17px;font-style:italic;color:var(--dark);background:var(--teal-light);border-left:4px solid var(--teal);border-radius:0 8px 8px 0;padding:1rem 1.5rem;display:inline-block;text-align:left;max-width:560px}
+
+/* SECTION */
+.section{padding:3.5rem 0;border-bottom:1px solid var(--border)}
+.section:last-child{border-bottom:none;padding-bottom:4rem}
+.section-tag{display:inline-block;background:var(--teal);color:#fff;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:4px 12px;border-radius:4px;margin-bottom:1rem}
+.section-title{font-family:'Playfair Display',serif;font-size:clamp(22px,3.5vw,34px);font-weight:400;color:var(--dark);margin-bottom:0.75rem;line-height:1.3}
+.section-intro{font-size:15px;color:var(--gray);line-height:1.8;margin-bottom:2rem;max-width:700px}
+
+/* RESULT CARDS — solo 3 */
+.result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:2rem}
+@media(max-width:600px){.result-grid{grid-template-columns:1fr}}
+.result-card{border-radius:12px;padding:1.25rem;border:1px solid var(--border)}
+.result-card.green{border-left:4px solid var(--green);background:#f0faf0}
+.result-card.red{border-left:4px solid var(--red);background:#fdf5f5}
+.result-icon{font-size:24px;margin-bottom:8px}
+.result-dim{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gray);margin-bottom:4px}
+.result-verdict{font-size:16px;font-weight:600;margin-bottom:4px}
+.result-card.green .result-verdict{color:var(--green)}
+.result-card.red .result-verdict{color:var(--red)}
+.result-stat{font-size:12px;color:var(--gray)}
+
+/* HISTORIA */
+.historia{background:#fff;border:1px solid var(--border);border-radius:12px;padding:1.25rem 1.5rem;margin:1rem 0;position:relative;padding-left:1.75rem}
+.historia::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:12px 0 0 12px}
+.historia.positiva::before{background:var(--green)}
+.historia.negativa::before{background:var(--red)}
+.historia.neutral::before{background:var(--teal)}
+.historia-quote{font-family:'Playfair Display',serif;font-size:14px;font-style:italic;color:var(--dark);line-height:1.7;margin-bottom:8px}
+.historia-author{font-size:11px;color:var(--teal);font-weight:500;letter-spacing:0.5px}
+.historia-source{font-size:10px;color:var(--gray);margin-top:2px}
+
+/* TIMELINE */
+.timeline{margin:1.5rem 0}
+.timeline-title{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin-bottom:1rem}
+.tl-row{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.tl-year{font-size:12px;font-weight:600;color:var(--dark);width:36px;flex-shrink:0}
+.tl-bar-wrap{flex:1;height:10px;background:#f0f0f0;border-radius:99px;overflow:hidden}
+.tl-bar{height:100%;border-radius:99px}
+.tl-val{font-size:12px;font-weight:600;width:36px;text-align:right;flex-shrink:0}
+.tl-note{font-size:10px;color:var(--gray);margin-left:4px;flex-shrink:0}
+
+/* CONFIANZA */
+.confianza-wrap{display:flex;gap:12px;margin:1.5rem 0;flex-wrap:wrap;align-items:center}
+.conf-card{flex:1;min-width:180px;border-radius:12px;padding:1.25rem;text-align:center}
+.conf-card.peak{background:#E8F5F5;border:1px solid #b2dfe0}
+.conf-card.drop{background:#fdf5f5;border:1px solid #f0c0bc}
+.conf-num{font-size:36px;font-weight:700;margin-bottom:4px}
+.conf-card.peak .conf-num{color:var(--teal)}
+.conf-card.drop .conf-num{color:var(--red)}
+.conf-label{font-size:12px;color:var(--gray);line-height:1.5}
+.conf-note{font-size:12px;color:var(--gray);font-style:italic;margin-top:1rem;padding:0.75rem 1rem;background:var(--mid);border-radius:8px;line-height:1.6}
+.conf-arrow{font-size:28px;color:var(--gray);flex-shrink:0}
+
+/* CALLOUT */
+.callout{background:var(--teal-light);border-left:4px solid var(--teal);border-radius:0 8px 8px 0;padding:1rem 1.25rem;margin:1.5rem 0}
+.callout p{font-size:13px;color:#2a4a4a;margin:0;line-height:1.7}
+
+/* CIERRE */
+.cierre{padding:3.5rem 0;text-align:center}
+.cierre-frase{font-family:'Playfair Display',serif;font-size:clamp(18px,3vw,26px);font-style:italic;color:var(--dark);line-height:1.6;max-width:600px;margin:0 auto}
+
+/* ORNAMENTO */
+.ornamento{text-align:center;color:#ccc;font-size:14px;letter-spacing:6px;padding:1rem 0}
+
+@media(max-width:600px){.wrapper{padding:0 1rem}.conf-arrow{display:none}}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<!-- ═══ HERO ═══ -->
+<div class="hero">
+  <div class="hero-label">Resultados · Datos con Rostro</div>
+  <h1 class="hero-title">¿Estuvo mejor el grupo de 65+<br>después de <em>2022</em>?</h1>
+  <p class="hero-sub">Una lectura construida con microdatos del ENIGH 2016–2024, análisis de sentimiento en YouTube e historias directas de personas mayores.</p>
+  <div class="hero-answer">"Depende de qué entendemos por mejor."</div>
+</div>
+
+<!-- ═══ SECCIÓN 1: LOS DATOS ═══ -->
+<div class="section">
+  <div class="section-tag">01 · Lo que miden los datos</div>
+  <h2 class="section-title">Alimentación mejoró.<br>Salud empeoró con la misma contundencia.</h2>
+  <p class="section-intro">Comparando el grupo de 65+ años con el grupo de 60–64 antes y después de 2022, los microdatos del ENIGH muestran efectos reales — y contradictorios.</p>
+
+  <div class="result-grid">
+    <div class="result-card green">
+      <div class="result-icon">🍽️</div>
+      <div class="result-dim">Alimentación</div>
+      <div class="result-verdict">Sí mejoró</div>
+      <div class="result-stat">−2.9 pp · p &lt; 0.001 · Resultado muy sólido</div>
+    </div>
+    <div class="result-card green">
+      <div class="result-icon">🏠</div>
+      <div class="result-dim">Vivienda</div>
+      <div class="result-verdict">Mejoró ligeramente</div>
+      <div class="result-stat">−0.5 pp · p = 0.037 · Efecto pequeño pero real</div>
+    </div>
+    <div class="result-card red">
+      <div class="result-icon">🏥</div>
+      <div class="result-dim">Salud</div>
+      <div class="result-verdict">No mejoró — empeoró</div>
+      <div class="result-stat">+2.9 pp · p &lt; 0.001 · Misma contundencia</div>
+    </div>
+  </div>
+
+  <div class="historia positiva">
+    <div class="historia-quote">"Le doy las gracias porque sentí emoción de ver más de 500 personas ya mayores haciendo su trámite. Gracias por recuperar la dignidad de la gente mayor — quizás muchos solo gocen por primera vez de una pensión."</div>
+    <div class="historia-author">Comentario de YouTube · Veracruz · 2022</div>
+    <div class="historia-source">Análisis de sentimiento · NRC positivo</div>
+  </div>
+
+  <div class="historia negativa">
+    <div class="historia-quote">"Qué bárbaros, con estos movimientos de la noche a la mañana lo único que logran es confundirlos y exponerlos al peligro — sin saber y ir a cobrar un día que no les corresponde les puede pasar algún accidente."</div>
+    <div class="historia-author">Comentario de YouTube · Veracruz · 2023</div>
+    <div class="historia-source">Análisis de sentimiento · NRC negativo — incertidumbre</div>
+  </div>
+
+  <div class="historia neutral">
+    <div class="historia-quote">"Antes tenía que salir a trabajar todos los días para poder comer. Ahora ya no."</div>
+    <div class="historia-author">Cynthia Vallejo · habla por su abuelo de 80 años · Nuevo León</div>
+    <div class="historia-source">Entrevista presencial · Hub Tec Monterrey · 2026</div>
+  </div>
+</div>
+
+<div class="ornamento">— ✦ —</div>
+
+<!-- ═══ SECCIÓN 2: LAS REDES ═══ -->
+<div class="section">
+  <div class="section-tag">02 · Lo que dicen las redes</div>
+  <h2 class="section-title">El tono de la conversación pública<br>no fue lineal.</h2>
+  <p class="section-intro">Analizamos 6,471 comentarios de YouTube sobre la Pensión Bienestar entre 2019 y 2026. El porcentaje de comentarios positivos tuvo dos picos — 2022 y 2024 — con una caída brusca en 2023. El score de palabras asociadas a confianza, por su parte, fue más alto en 2022 y bajó en el período posterior — una tendencia descriptiva en el corpus, no un efecto causal.</p>
+
+  <div class="timeline">
+    <div class="timeline-title">% Comentarios positivos por año · toda la población</div>
+    <div class="tl-row">
+      <div class="tl-year">2019</div>
+      <div class="tl-bar-wrap"><div class="tl-bar" style="width:49%;background:#007B7F"></div></div>
+      <div class="tl-val" style="color:#007B7F">49%</div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-year">2021</div>
+      <div class="tl-bar-wrap"><div class="tl-bar" style="width:36%;background:#999"></div></div>
+      <div class="tl-val" style="color:#999">36%</div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-year" style="color:#B7770D">2022</div>
+      <div class="tl-bar-wrap"><div class="tl-bar" style="width:69%;background:#B7770D"></div></div>
+      <div class="tl-val" style="color:#B7770D">69%</div>
+      <div class="tl-note">← primer pico</div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-year" style="color:#C0392B">2023</div>
+      <div class="tl-bar-wrap"><div class="tl-bar" style="width:38%;background:#C0392B"></div></div>
+      <div class="tl-val" style="color:#C0392B">38%</div>
+      <div class="tl-note">← caída brusca</div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-year" style="color:#6C63FF">2024</div>
+      <div class="tl-bar-wrap"><div class="tl-bar" style="width:79%;background:#6C63FF"></div></div>
+      <div class="tl-val" style="color:#6C63FF">79%</div>
+      <div class="tl-note">← máximo de la serie</div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-year" style="color:#C0392B">2026</div>
+      <div class="tl-bar-wrap"><div class="tl-bar" style="width:15%;background:#C0392B"></div></div>
+      <div class="tl-val" style="color:#C0392B">15%</div>
+    </div>
+  </div>
+
+  <div class="confianza-wrap">
+    <div class="conf-card peak">
+      <div class="conf-num">1.87</div>
+      <div class="conf-label">Promedio de palabras<br>de confianza · 2022</div>
+    </div>
+    <div class="conf-arrow">→</div>
+    <div class="conf-card drop">
+      <div class="conf-num">0.98</div>
+      <div class="conf-label">Promedio de palabras<br>de confianza · post-2022</div>
+    </div>
+  </div>
+  <div class="conf-note">Este indicador refleja el promedio de palabras asociadas a "confianza" en el léxico NRC por período. Es una tendencia descriptiva en el corpus analizado — no tiene p-value ni representa a la población adulta mayor.</div>
+
+  <div class="historia positiva">
+    <div class="historia-quote">"Yo tuve dos negocios, trabajé 38 años. Cuando me quedé sin nada, el apoyo Bienestar me ha ayudado mucho."</div>
+    <div class="historia-author">Comentario de YouTube · Sinaloa · 2024</div>
+    <div class="historia-source">Análisis de sentimiento · NRC positivo — alivio económico</div>
+  </div>
+
+  <div class="historia negativa">
+    <div class="historia-quote">"Aquí en Tijuana están robándole a los ancianos en el banco. A mí me robó la máquina y después gastaron los dos últimos apoyos. El anciano tiene que subir y bajar y presentar repetidas veces los mismos documentos."</div>
+    <div class="historia-author">Comentario de YouTube · Baja California · 2024</div>
+    <div class="historia-source">Análisis de sentimiento · NRC negativo — vulnerabilidad</div>
+  </div>
+
+  <div class="historia negativa">
+    <div class="historia-quote">"Acá en Monterrey han quedado muy mal. Cientos de personas tienen tiempo registradas y ni sus luces de apoyo. Están durmiendo a la gente y los apoyos no llegan."</div>
+    <div class="historia-author">Comentario de YouTube · Nuevo León · 2023</div>
+    <div class="historia-source">Análisis de sentimiento · NRC negativo — promesas incumplidas</div>
+  </div>
+
+  <div class="callout">
+    <p>Este análisis mide el <strong>discurso público general en YouTube</strong> — no la opinión de los adultos mayores beneficiarios. Es una dimensión complementaria, no una encuesta representativa.</p>
+  </div>
+</div>
+
+<div class="ornamento">— ✦ —</div>
+
+<!-- ═══ SECCIÓN 3: CONCLUSIÓN INTEGRADORA ═══ -->
+<div class="section">
+  <div class="section-tag">03 · Lo que todo junto dice</div>
+  <h2 class="section-title">Tres fuentes.<br>Una conversación incompleta.</h2>
+  <p class="section-intro">Los datos muestran que la alimentación mejoró con la misma contundencia con que la salud empeoró. Las redes muestran que la confianza en el programa subió y después bajó. Y las personas mayores que participaron en este proyecto muestran algo que ninguna de las dos fuentes captura sola.</p>
+
+  <div class="callout">
+    <p>El impacto de la pensión <strong>no es uniforme, no es simple y no cabe en un solo número.</strong> Depende del estado, de la dimensión que se mire, del momento en que se pregunte — y de a quién se le pregunte.</p>
+  </div>
+
+  <div class="historia positiva">
+    <div class="historia-quote">"Mil gracias, cambiaste mi vida."</div>
+    <div class="historia-author">Doña Consuelo · 65 años · Coahuila</div>
+    <div class="historia-source">Formulario ciudadano · datosconrostro.framer.website</div>
+  </div>
+
+  <p style="font-size:14px;color:var(--gray);line-height:1.8;margin-top:1.5rem">Cinco palabras que ningún modelo estadístico puede generar. Que ningún comentario de YouTube puede reemplazar. Que ningún mapa coroplético puede mostrar. Y que sin embargo, son parte de la respuesta a la pregunta central de este proyecto.</p>
+
+  <p style="font-size:14px;color:var(--gray);line-height:1.8;margin-top:1rem">¿Quieres conocer más historias como la de Doña Consuelo? <a href="https://datosconrostro.framer.website/historias" style="color:var(--teal);font-weight:500">Visita la sección de Historias →</a></p>
+</div>
+
+<!-- ═══ CIERRE ═══ -->
+<div class="cierre">
+  <div class="cierre-frase">"Medir el bienestar es siempre incompleto. Pero escuchar las voces de quienes lo viven acerca un poco más a la verdad."</div>
+</div>
+
+</div>
+</body>
+</html>
